@@ -9,8 +9,8 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { Picker } from "@react-native-picker/picker";
-import { registerUser, getUniversities } from '../api'; // 필요한 API 함수들을 import 합니다.
+import Modal from 'react-native-modal';
+import { registerUser, getUniversities } from '../api';
 
 const SignupScreen = ({ navigation }) => {
   const [userId, setUserId] = useState('');
@@ -18,9 +18,10 @@ const SignupScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [selectedSchool, setSelectedSchool] = useState('');
-  const [schools, setSchools] = useState([]); 
+  const [schools, setSchools] = useState([]);
   const [authMethod, setAuthMethod] = useState('');
   const [error, setError] = useState('');
+  const [isModalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
     const fetchSchools = async () => {
@@ -51,6 +52,15 @@ const SignupScreen = ({ navigation }) => {
       console.error('Signup failed:', err);
       setError('회원가입에 실패했습니다. 입력 정보를 확인해주세요.');
     }
+  };
+
+  const toggleModal = () => {
+    setModalVisible(!isModalVisible);
+  };
+
+  const handleSelectSchool = (schoolId) => {
+    setSelectedSchool(schoolId);
+    toggleModal();
   };
 
   return (
@@ -110,24 +120,25 @@ const SignupScreen = ({ navigation }) => {
           <View style={styles.separator} />
 
           <View style={styles.pickerContainer}>
-            <Text style={styles.label}>학교</Text>
-            <View style={styles.pickerWrapper}>
-              <Picker
-                selectedValue={selectedSchool}
-                style={styles.picker}
-                onValueChange={(itemValue) => setSelectedSchool(itemValue)}
-              >
-                <Picker.Item label="학교를 선택하세요" value="" />
-                {schools.map((school) => (
-                  <Picker.Item
-                    key={school.id}
-                    label={school.univ_name}
-                    value={school.id}
-                  />
-                ))}
-              </Picker>
-            </View>
+            <TouchableOpacity onPress={toggleModal} style={styles.pickerButton}>
+              <Text style={styles.pickerButtonText}>
+                {selectedSchool ? schools.find(school => school.id === selectedSchool).univ_name : "학교를 선택하세요"}
+              </Text>
+            </TouchableOpacity>
           </View>
+
+          <Modal isVisible={isModalVisible}>
+            <View style={styles.modalContent}>
+              {schools.map((school) => (
+                <TouchableOpacity key={school.id} onPress={() => handleSelectSchool(school.id)}>
+                  <Text style={styles.modalItem}>{school.univ_name}</Text>
+                </TouchableOpacity>
+              ))}
+              <TouchableOpacity onPress={toggleModal} style={styles.modalCloseButton}>
+                <Text style={styles.modalCloseButtonText}>닫기</Text>
+              </TouchableOpacity>
+            </View>
+          </Modal>
 
           <View style={styles.authMethodContainer}>
             <Text style={styles.label}>인증 방법 </Text>
@@ -235,25 +246,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     width: "100%", // 전체 너비를 사용
   },
-  idInputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    width: "70%", // 입력 요소 너비 조정
-  },
-  idInput: {
-    width: "60%", // 입력 요소 너비 조정
-  },
-  checkButton: {
-    backgroundColor: "#e67e22", // 주황색 배경
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-  },
-  checkButtonText: {
-    color: "#ffffff",
-    fontWeight: "bold",
-  },
   label: {
     fontSize: 18,
     color: "#ffffff",
@@ -266,21 +258,47 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff", // 흰색 배경
     paddingLeft: 10,
   },
+  separator: {
+    borderBottomColor: "#ffffff",
+    borderBottomWidth: 1,
+    width: "100%",
+    marginBottom: 10,
+  },
   pickerContainer: {
     width: "100%",
     marginBottom: 10,
   },
-  pickerWrapper: {
+  pickerButton: {
     backgroundColor: "#ffffff",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
     borderRadius: 5,
-    marginTop: 10,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: "#bdc3c7",
+    width: "100%",
+    alignItems: "center",
   },
-  picker: {
-    height: 40,
+  pickerButtonText: {
     color: "#000000",
+    fontSize: 16,
+  },
+  modalContent: {
+    backgroundColor: "#ffffff",
+    padding: 20,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  modalItem: {
+    fontSize: 18,
+    paddingVertical: 10,
+  },
+  modalCloseButton: {
+    marginTop: 20,
+    padding: 10,
+    backgroundColor: "#3498db",
+    borderRadius: 5,
+  },
+  modalCloseButtonText: {
+    color: "#ffffff",
+    fontSize: 16,
   },
   authMethodContainer: {
     width: "100%",
@@ -325,12 +343,6 @@ const styles = StyleSheet.create({
     marginTop: 20,
     color: "#ffffff",
     textDecorationLine: "underline",
-  },
-  separator: {
-    borderBottomColor: "#ffffff",
-    borderBottomWidth: 1,
-    width: "100%",
-    marginBottom: 10,
   },
   errorText: {
     color: 'red',
