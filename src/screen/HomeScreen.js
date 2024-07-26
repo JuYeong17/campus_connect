@@ -14,9 +14,7 @@ const HomeScreen = ({ navigation, route }) => {
       setLocalIsLoggedIn(route.params.isLoggedIn);
       setLocalSelectedUniversity(route.params.selectedUniversity || "");
       setUserInfo({
-        nickname: route.params.nickname || "",
         userId: route.params.userId || "",
-        password: route.params.password || "",
         selectedUniversity: route.params.selectedUniversity || "",
       });
     }
@@ -44,7 +42,7 @@ const HomeScreen = ({ navigation, route }) => {
       </View>
 
       {localIsLoggedIn ? (
-        <Text style={styles.universityText}>대학 {localSelectedUniversity}</Text>
+        <Text style={styles.universityText}>{localSelectedUniversity}</Text>
       ) : (
         <View style={styles.pickerContainer}>
           <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.pickerButton}>
@@ -90,7 +88,7 @@ const HomeScreen = ({ navigation, route }) => {
 
       <TouchableOpacity
         style={styles.button}
-        onPress={() => navigation.navigate("SchoolLifeBoard", {userInfo})}
+        onPress={() => navigation.navigate("SchoolLifeBoard", { userInfo })}
       >
         <Text style={styles.buttonText}>학교생활게시판</Text>
       </TouchableOpacity>

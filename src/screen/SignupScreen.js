@@ -38,12 +38,14 @@ const SignupScreen = ({ navigation }) => {
 
   const handleSignup = async () => {
     try {
+      const selectedSchoolName = schools.find(school => school.id === selectedSchool).univ_name;
       const user = {
         user_id: userId,
         nickname,
         email,
         password,
         university_id: selectedSchool, // 실제 학교 ID로 설정
+        univ_name: selectedSchoolName, // 선택한 학교 이름
         points: 0 // 초기 포인트
       };
       const response = await registerUser(user);

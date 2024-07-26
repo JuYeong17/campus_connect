@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-nativ
 import { FontAwesome } from "@expo/vector-icons";
 import { loginUser } from '../api';
 
-const LoginScreen = ({ navigation, setIsLoggedIn, setUserId }) => {
+const LoginScreen = ({ navigation, setIsLoggedIn, setUserId, setSelectedUniversity }) => {
   const [userId, setUserIdInput] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -13,7 +13,12 @@ const LoginScreen = ({ navigation, setIsLoggedIn, setUserId }) => {
       const response = await loginUser(userId, password);
       setIsLoggedIn(true);
       setUserId(response.user.id);
-      navigation.navigate('Home');
+      setSelectedUniversity(response.user.univ_name);
+      navigation.navigate('Home', {
+        isLoggedIn: true,
+        selectedUniversity: response.user.univ_name,
+        userId: response.user.id,
+      });
     } catch (err) {
       console.error('Login failed:', err);
       setError('로그인에 실패했습니다. 아이디와 비밀번호를 확인해주세요.');

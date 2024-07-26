@@ -23,6 +23,8 @@ const Stack = createStackNavigator();
 const App = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [selectedUniversity, setSelectedUniversity] = useState("");
+  const [userId, setUserId] = useState(null);
+  const [nickname, setNickname] = useState("");
 
   return (
     <NavigationContainer>
@@ -38,17 +40,25 @@ const App = () => {
             <HomeScreen
               {...props}
               isLoggedIn={isLoggedIn}
-              setIsLoggedIn={setIsLoggedIn}
               selectedUniversity={selectedUniversity}
-              setSelectedUniversity={setSelectedUniversity}
+              nickname={nickname}
             />
           )}
         </Stack.Screen>
         <Stack.Screen
           name="Login"
-          component={LoginScreen}
           options={{ headerShown: false }}
-        />
+        >
+          {(props) => (
+            <LoginScreen
+              {...props}
+              setIsLoggedIn={setIsLoggedIn}
+              setUserId={setUserId}
+              setSelectedUniversity={setSelectedUniversity}
+              setNickname={setNickname}
+            />
+          )}
+        </Stack.Screen>
         <Stack.Screen
           name="Signup"
           component={SignupScreen}
