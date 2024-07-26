@@ -54,6 +54,16 @@ export const addQuestion = async (question) => {
   }
 };
 
+export const updateQuestion = async (id, question) => {
+  try {
+    const response = await api.put(`/questions/${id}`, question);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating question:', error);
+    throw error;
+  }
+};
+
 export const toggleLike = async (id, liked) => {
   try {
     const response = await api.post(`/questions/like/${id}`, { liked });
