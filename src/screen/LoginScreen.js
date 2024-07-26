@@ -17,7 +17,11 @@ const LoginScreen = ({ navigation, setIsLoggedIn, setUserId, setSelectedUniversi
       navigation.navigate('Home', {
         isLoggedIn: true,
         selectedUniversity: response.user.univ_name,
-        userId: response.user.id,
+        user_id: response.user.user_id,
+        password : response.user.password,
+        nickname: response.user.nickname,
+        email: response.user.email,
+        points : response.user.points,
       });
     } catch (err) {
       console.error('Login failed:', err);

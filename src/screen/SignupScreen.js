@@ -22,6 +22,7 @@ const SignupScreen = ({ navigation }) => {
   const [authMethod, setAuthMethod] = useState('');
   const [error, setError] = useState('');
   const [isModalVisible, setModalVisible] = useState(false);
+  
 
   useEffect(() => {
     const fetchSchools = async () => {

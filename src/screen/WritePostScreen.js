@@ -39,12 +39,11 @@ const WritePostScreen = ({ route }) => {
       title,
       content,
       category_id: 1, // Set a default category id or let the user select one
-      user_id: userInfo.id,
+      user_id: userInfo.user_id,
       username: anonymous ? '익명' : userInfo.nickname,
       likes: 0,
       scrapped: false,
-      liked: false,     
-      
+      liked: false,       
     };
 
     console.log(newPost);

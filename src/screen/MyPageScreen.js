@@ -12,7 +12,8 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 
 const MyPageScreen = () => {
   const navigation = useNavigation();
-  const [nickname, setNickname] = useState("홍길동");
+  const route = useRoute();
+  const { userInfo } = route.params;
 
   const deleteAccount = () => {
     // 회원탈퇴 로직
@@ -27,14 +28,14 @@ const MyPageScreen = () => {
       </TouchableOpacity>      
       <View style={styles.header}>
         <Ionicons name="person-circle" size={100} color="#2c3e50" />
-        <Text style={styles.welcomeText}>반가워요, {nickname}님</Text>
+        <Text style={styles.welcomeText}>반가워요, {userInfo.nickname}님</Text>
       </View>
 
       <View style={styles.section}>
         <TouchableOpacity
           style={styles.optionButton}
           onPress={() => {
-            navigation.navigate("AccountInfoScreen");
+            navigation.navigate("AccountInfoScreen", {userInfo});
           }}
         >
           <Text style={styles.optionText}>계정 정보 변경</Text>
@@ -46,7 +47,7 @@ const MyPageScreen = () => {
         <TouchableOpacity
           style={styles.optionButton}
           onPress={() => {
-            navigation.navigate("PostManagementScreen");
+            navigation.navigate("PostManagementScreen", {userInfo});
           }}
         >
           <Text style={styles.optionText}>게시글 관리</Text>
@@ -54,7 +55,7 @@ const MyPageScreen = () => {
         <TouchableOpacity
           style={styles.optionButton}
           onPress={() => {
-            navigation.navigate("CommentManagementScreen");
+            navigation.navigate("CommentManagementScreen", {userInfo});
           }}
         >
           <Text style={styles.optionText}>댓글 관리</Text>
@@ -62,7 +63,7 @@ const MyPageScreen = () => {
         <TouchableOpacity
           style={styles.optionButton}
           onPress={() => {
-            navigation.navigate("LikeManagementScreen");
+            navigation.navigate("LikeManagementScreen", {userInfo});
           }}
         >
           <Text style={styles.optionText}>좋아요 관리</Text>
@@ -70,7 +71,7 @@ const MyPageScreen = () => {
         <TouchableOpacity
           style={styles.optionButton}
           onPress={() => {
-            navigation.navigate("ScrapManagementScreen");
+            navigation.navigate("ScrapManagementScreen", {userInfo});
           }}
         >
           <Text style={styles.optionText}>스크랩 관리</Text>
@@ -81,7 +82,7 @@ const MyPageScreen = () => {
         <TouchableOpacity
           style={styles.optionButton}
           onPress={() => {
-            navigation.navigate("PointShopScreen");
+            navigation.navigate("PointShopScreen", {userInfo});
           }}
         >
           <Text style={styles.optionText}>포인트샵</Text>

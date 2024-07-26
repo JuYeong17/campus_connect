@@ -1,13 +1,16 @@
 import React from 'react';
 import { View, Text, FlatList, Image, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 
 // Dimensions for responsive design
 const { width } = Dimensions.get('window');
 
+
 const PointShopScreen = () => {
   const navigation = useNavigation();
+  const route = useRoute();
+  const { userInfo } = route.params;
 
   // Sample data for the Point Shop
   const items = [
@@ -41,7 +44,7 @@ const PointShopScreen = () => {
           <Text style={styles.headerTitle}>포인트샵</Text>
         </View>
         <View style={styles.pointsContainer}>
-          <Text style={styles.pointsText}>포인트: 1200</Text>
+          <Text style={styles.pointsText}>포인트: {userInfo.points}</Text>
         </View>
       </View>
       <FlatList

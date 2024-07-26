@@ -14,8 +14,12 @@ const HomeScreen = ({ navigation, route }) => {
       setLocalIsLoggedIn(route.params.isLoggedIn);
       setLocalSelectedUniversity(route.params.selectedUniversity || "");
       setUserInfo({
-        userId: route.params.userId || "",
+        user_id: route.params.user_id || "",
         selectedUniversity: route.params.selectedUniversity || "",
+        nickname: route.params.nickname || "",
+        email: route.params.email || "",
+        points : route.params.points || "",
+        password : route.params.password || "",
       });
     }
   }, [route.params]);
@@ -29,6 +33,8 @@ const HomeScreen = ({ navigation, route }) => {
         console.error('Error fetching universities:', error);
       });
   }, []);
+
+
 
   const selectUniversity = (univName) => {
     setLocalSelectedUniversity(univName);
@@ -79,6 +85,8 @@ const HomeScreen = ({ navigation, route }) => {
         </View>
       </Modal>
 
+      <Text>반가워요! {userInfo.nickname}{userInfo.email}{userInfo.password}님!</Text>
+
       <TouchableOpacity
         style={styles.button}
         onPress={() => navigation.navigate("JobBoard", { userInfo })}
@@ -96,7 +104,7 @@ const HomeScreen = ({ navigation, route }) => {
       <View style={styles.authTextContainer}>
         {localIsLoggedIn ? (
           <>
-            <TouchableOpacity onPress={() => navigation.navigate("MyPage")}>
+            <TouchableOpacity onPress={() => navigation.navigate("MyPage", {userInfo})}>
               <Text style={styles.authText}>마이페이지</Text>
             </TouchableOpacity>
             <Text style={styles.separator}> | </Text>
