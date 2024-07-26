@@ -5,59 +5,59 @@ import { Provider } from 'react-native-paper';
 import moment from 'moment';
 import 'moment/locale/ko'; // Import Korean locale
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { getPosts, addPost, toggleLike, toggleScrap } from '../api'; // Import API functions
+import { getQuestions, addQuestion, toggleLike, toggleScrap } from '../api'; // Import API functions
 
 const JobBoardScreen = () => {
-  const [posts, setPosts] = useState([]);
+  const [questions, setQuestions] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filteredPosts, setFilteredPosts] = useState([]);
+  const [filteredQuestions, setFilteredQuestions] = useState([]);
   const navigation = useNavigation();
   const route = useRoute();
   const { userInfo } = route.params;
 
   useEffect(() => {
     moment.locale('ko');
-    fetchPosts();
+    fetchQuestions();
   }, []);
 
   useEffect(() => {
     if (searchQuery) {
-      setFilteredPosts(posts.filter(post =>
-        post.title.includes(searchQuery) || post.content.includes(searchQuery)
+      setFilteredQuestions(questions.filter(question =>
+        question.title.includes(searchQuery) || question.content.includes(searchQuery)
       ));
     } else {
-      setFilteredPosts(posts);
+      setFilteredQuestions(questions);
     }
-  }, [searchQuery, posts]);
+  }, [searchQuery, questions]);
 
-  const fetchPosts = async () => {
+  const fetchQuestions = async () => {
     try {
-      const response = await getPosts();
-      setPosts(response);
-      setFilteredPosts(response);
+      const response = await getQuestions();
+      setQuestions(response);
+      setFilteredQuestions(response);
     } catch (error) {
-      console.error('Error fetching posts:', error);
+      console.error('Error fetching questions:', error);
     }
   };
 
-  const handleAddPost = async (newPost) => {
+  const handleAddQuestion = async (newQuestion) => {
     try {
-      const response = await addPost(newPost);
-      setPosts([response, ...posts]);
-      setFilteredPosts([response, ...posts]);
+      const response = await addQuestion(newQuestion);
+      setQuestions([response, ...questions]);
+      setFilteredQuestions([response, ...questions]);
     } catch (error) {
-      console.error('Error adding post:', error);
+      console.error('Error adding question:', error);
     }
   };
 
   const handleToggleLike = async (id, liked) => {
     try {
       await toggleLike(id, liked);
-      const updatedPosts = posts.map(post =>
-        post.id === id ? { ...post, likes: post.likes + (liked ? -1 : 1), liked: !post.liked } : post
+      const updatedQuestions = questions.map(question =>
+        question.id === id ? { ...question, likes: question.likes + (liked ? -1 : 1), liked: !question.liked } : question
       );
-      setPosts(updatedPosts);
-      setFilteredPosts(updatedPosts);
+      setQuestions(updatedQuestions);
+      setFilteredQuestions(updatedQuestions);
     } catch (error) {
       console.error('Error toggling like:', error);
     }
@@ -66,19 +66,19 @@ const JobBoardScreen = () => {
   const handleToggleScrap = async (id, scrapped) => {
     try {
       await toggleScrap(id, scrapped);
-      const updatedPosts = posts.map(post =>
-        post.id === id ? { ...post, scrapped: !post.scrapped } : post
+      const updatedQuestions = questions.map(question =>
+        question.id === id ? { ...question, scrapped: !question.scrapped } : question
       );
-      setPosts(updatedPosts);
-      setFilteredPosts(updatedPosts);
+      setQuestions(updatedQuestions);
+      setFilteredQuestions(updatedQuestions);
     } catch (error) {
       console.error('Error toggling scrap:', error);
     }
   };
 
   const formatRelativeTime = (time) => {
-    const postTime = moment(time);
-    return moment().diff(postTime, 'days') >= 1 ? postTime.format('YYYY-MM-DD') : postTime.fromNow();
+    const questionTime = moment(time);
+    return moment().diff(questionTime, 'days') >= 1 ? questionTime.format('YYYY-MM-DD') : questionTime.fromNow();
   };
 
   const renderItem = ({ item }) => (
@@ -128,12 +128,12 @@ const JobBoardScreen = () => {
           </View>
         </View>
         <FlatList
-          data={filteredPosts}
+          data={filteredQuestions}
           renderItem={renderItem}
           keyExtractor={item => item.id.toString()}
           contentContainerStyle={styles.listContainer}
         />
-        <TouchableOpacity style={styles.writeButton} onPress={() => navigation.navigate('WritePostScreen', { addPost: handleAddPost, userInfo })}>
+        <TouchableOpacity style={styles.writeButton} onPress={() => navigation.navigate('WritePostScreen', { addQuestion: handleAddQuestion, userInfo })}>
           <Ionicons name="pencil" size={24} color="white" />
         </TouchableOpacity>
       </View>

@@ -43,3 +43,33 @@ export const getQuestions = async () => {
     throw error;
   }
 };
+
+export const addQuestion = async (question) => {
+  try {
+    const response = await api.post('/questions', question);
+    return response.data;
+  } catch (error) {
+    console.error('Error adding question:', error);
+    throw error;
+  }
+};
+
+export const toggleLike = async (id, liked) => {
+  try {
+    const response = await api.post(`/questions/like/${id}`, { liked });
+    return response.data;
+  } catch (error) {
+    console.error('Error toggling like:', error);
+    throw error;
+  }
+};
+
+export const toggleScrap = async (id, scrapped) => {
+  try {
+    const response = await api.post(`/questions/scrap/${id}`, { scrapped });
+    return response.data;
+  } catch (error) {
+    console.error('Error toggling scrap:', error);
+    throw error;
+  }
+};
