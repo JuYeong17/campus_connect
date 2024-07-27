@@ -34,6 +34,26 @@ export const getUniversities = async () => {
   }
 };
 
+export const getUserInfo = async (id) => {
+  try {
+    const response = await api.get(`/users/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching user info:', error);
+    throw error;
+  }
+};
+
+export const updateUserInfo = async (id, userInfo) => {
+  try {
+    const response = await api.put(`/users/${id}`, userInfo);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating user info:', error);
+    throw error;
+  }
+};
+
 export const getQuestions = async () => {
   try {
     const response = await api.get('/questions');
@@ -43,6 +63,18 @@ export const getQuestions = async () => {
     throw error;
   }
 };
+
+
+export const getQuestionsByUsername = async (user_id) => {
+  try {
+    const response = await api.get(`/questions/${user_id}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching questions by user_id:', error);
+    throw error;
+  }
+};
+
 
 export const addQuestion = async (question) => {
   try {

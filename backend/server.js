@@ -21,7 +21,7 @@ app.use(bodyParser.json());
 app.use('/api/users', userRoutes);
 app.use('/api/university', universityRoutes); // 대학 관련 라우트
 app.use('/api/categories', categoryRoutes);
-app.use('/api/questions', questionRoutes);
+app.use('/api/questions', questionRoutes); // 질문 관련 라우트
 app.use('/api/answers', answerRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/likes', likeRoutes);

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,26 +8,54 @@ import {
   Alert,
   ScrollView,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
+import { getUserInfo, updateUserInfo } from '../api';
 
 const AccountInfoScreen = () => {
   const navigation = useNavigation();
-  const [username, setUsername] = useState("user123");
-  const [nickname, setNickname] = useState("홍길동");
-  const [email, setEmail] = useState("honggildong@example.com");
+  const route = useRoute();
+  const userId = route.params?.userId;
+
+  const [username, setUsername] = useState("");
+  const [nickname, setNickname] = useState("");
+  const [email, setEmail] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  const handleSave = () => {
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const userInfo = await getUserInfo(userId);
+        setUsername(userInfo.user_id);
+        setNickname(userInfo.nickname);
+        setEmail(userInfo.email);
+      } catch (error) {
+        console.error('Error fetching user info:', error);
+      }
+    };
+
+    fetchUserInfo();
+  }, [userId]);
+
+  const handleSave = async () => {
     if (newPassword !== confirmPassword) {
       Alert.alert("비밀번호 오류", "새 비밀번호와 비밀번호 확인이 일치하지 않습니다.");
       return;
     }
 
-    // Here, you would typically make an API request to save the new account info
-    Alert.alert("저장 완료", "계정 정보가 성공적으로 업데이트되었습니다.");
+    try {
+      const updatedUser = {
+        nickname,
+        password: newPassword ? newPassword : currentPassword,
+      };
+      await updateUserInfo(userId, updatedUser);
+      Alert.alert("저장 완료", "계정 정보가 성공적으로 업데이트되었습니다.");
+    } catch (error) {
+      console.error('Error updating user info:', error);
+      Alert.alert("오류", "계정 정보 업데이트에 실패했습니다.");
+    }
   };
 
   return (
@@ -43,8 +71,6 @@ const AccountInfoScreen = () => {
         <TextInput
           style={styles.input}
           value={username}
-          onChangeText={setUsername}
-          editable={false}
         />
       </View>
 
@@ -62,8 +88,6 @@ const AccountInfoScreen = () => {
         <TextInput
           style={styles.input}
           value={email}
-          onChangeText={setEmail}
-          editable={false}
         />
       </View>
 

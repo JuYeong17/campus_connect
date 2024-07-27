@@ -9,19 +9,23 @@ import {
 } from 'react-native';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import axios from 'axios';
 
 const PostManagementScreen = () => {
   const [posts, setPosts] = useState([]);
   const navigation = useNavigation();
 
   useEffect(() => {
-    // Fetch the posts from an API or database
-    const initialPosts = [
-      { id: '1', title: '게시글 제목 1', content: '게시글 내용 1', username: 'user1' },
-      { id: '2', title: '게시글 제목 2', content: '게시글 내용 2', username: 'user2' },
-      { id: '3', title: '게시글 제목 3', content: '게시글 내용 3', username: 'user3' },
-    ];
-    setPosts(initialPosts);
+    const fetchPosts = async () => {
+      try {
+        const response = await axios.get('http://13.125.20.36:3000/api/questions');
+        setPosts(response.data);
+      } catch (error) {
+        console.error('Error fetching posts:', error);
+      }
+    };
+
+    fetchPosts();
   }, []);
 
   const handleDeletePost = (postId) => {
@@ -35,10 +39,16 @@ const PostManagementScreen = () => {
         },
         {
           text: "삭제",
-          onPress: () => {
-            const updatedPosts = posts.filter(post => post.id !== postId);
-            setPosts(updatedPosts);
-            Alert.alert("삭제 완료", "게시글이 삭제되었습니다.");
+          onPress: async () => {
+            try {
+              await axios.delete(`http://13.125.20.36:3000/api/questions/${postId}`);
+              const updatedPosts = posts.filter(post => post.id !== postId);
+              setPosts(updatedPosts);
+              Alert.alert("삭제 완료", "게시글이 삭제되었습니다.");
+            } catch (error) {
+              console.error('Error deleting post:', error);
+              Alert.alert("오류", "게시글 삭제에 실패했습니다.");
+            }
           }
         }
       ]
@@ -73,7 +83,7 @@ const PostManagementScreen = () => {
       <FlatList
         data={posts}
         renderItem={renderItem}
-        keyExtractor={item => item.id}
+        keyExtractor={item => item.id.toString()}
         contentContainerStyle={styles.listContainer}
       />
       <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate('WritePostScreen')}>
@@ -130,7 +140,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: 'bold',
-    
   },
   content: {
     fontSize: 14,

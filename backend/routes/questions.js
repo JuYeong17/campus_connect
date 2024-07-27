@@ -12,6 +12,17 @@ router.get('/', (req, res) => {
   });
 });
 
+router.get('/:user_id', (req, res) => {
+  const { user_id } = req.params;
+  connection.query('SELECT * FROM questions WHERE user_id = ?', [user_id], (error, results) => {
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+    res.json(results);
+  });
+});
+
+
 // 질문 추가
 router.post('/', (req, res) => {
   const question = req.body;
