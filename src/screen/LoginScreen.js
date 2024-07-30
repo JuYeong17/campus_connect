@@ -17,7 +17,7 @@ const LoginScreen = ({ navigation, setIsLoggedIn, setUserId, setSelectedUniversi
       navigation.navigate('Home', {
         isLoggedIn: true,
         selectedUniversity: response.user.univ_name,
-        user_id: response.user.user_id,
+        user_id: response.user.user_id,  // Add this line to pass user_id
         password : response.user.password,
         nickname: response.user.nickname,
         email: response.user.email,
@@ -64,6 +64,7 @@ const LoginScreen = ({ navigation, setIsLoggedIn, setUserId, setSelectedUniversi
     </View>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {

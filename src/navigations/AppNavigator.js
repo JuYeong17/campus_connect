@@ -10,6 +10,7 @@ import MyPageScreen from "../screen/MyPageScreen";
 import PostDetailScreen from "../screen/PostDetailScreen";
 import SearchScreen from '../screen/SearchScreen';
 import WritePostScreen from '../screen/WritePostScreen';
+import WritePostScreen2 from '../screen/WritePostScreen2';
 import AnswerDetailScreen from '../screen/AnswerDetailScreen';
 import AccountInfoScreen from '../screen/AccountInfoScreen';
 import PostManagementScreen  from '../screen/PostManagementScreen';
@@ -51,7 +52,7 @@ const App = () => {
         >
           {(props) => (
             <LoginScreen
-              {...props}
+               {...props}
               setIsLoggedIn={setIsLoggedIn}
               setUserId={setUserId}
               setSelectedUniversity={setSelectedUniversity}
@@ -91,6 +92,11 @@ const App = () => {
         <Stack.Screen
           name="WritePostScreen"
           component={WritePostScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="WritePostScreen2"
+          component={WritePostScreen2}
           options={{ headerShown: false }}
         />
         <Stack.Screen 

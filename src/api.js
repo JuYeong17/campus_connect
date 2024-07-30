@@ -78,10 +78,11 @@ export const getQuestionsByUsername = async (user_id) => {
 
 export const addQuestion = async (question) => {
   try {
+    console.log('!!!', question);
     const response = await api.post('/questions', question);
     return response.data;
   } catch (error) {
-    console.error('Error adding question:', error);
+    console.error('Error adding question:', error.response?.data || error.message || error);
     throw error;
   }
 };
@@ -91,7 +92,7 @@ export const updateQuestion = async (id, question) => {
     const response = await api.put(`/questions/${id}`, question);
     return response.data;
   } catch (error) {
-    console.error('Error updating question:', error);
+    console.error('Error updating question:', error.response?.data || error.message || error);
     throw error;
   }
 };
@@ -112,6 +113,16 @@ export const toggleScrap = async (id, scrapped) => {
     return response.data;
   } catch (error) {
     console.error('Error toggling scrap:', error);
+    throw error;
+  }
+};
+
+export const getQuestionsByCategory = async (category_id) => {
+  try {
+    const response = await api.get(`/questions?category_id=${category_id}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching questions by category:', error);
     throw error;
   }
 };

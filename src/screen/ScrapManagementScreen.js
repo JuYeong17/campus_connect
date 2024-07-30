@@ -17,9 +17,8 @@ const ScrapManagementScreen = () => {
   useEffect(() => {
     const fetchScrappedItems = async () => {
       const data = [
-        { id: '1', title: '게시물 1', content: '게시물 1 내용', time: '2024-07-22T10:00:00Z', likes: 5, type: 'post' },
-        { id: '2', title: '게시물 2', content: '게시물 2 내용', time: '2024-07-22T11:00:00Z', likes: 3, type: 'post' },
-        { id: '3', title: '댓글 1', content: '댓글 1 내용', time: '2024-07-22T12:00:00Z', likes: 1, type: 'comment' },
+        { id: '1', title: '취업 준비 다들 어떻게 하셨나요???', content: '막막합니다 ㅜㅜ', time: '2024-07-22T10:00:00Z', likes: 1, type: 'post' },
+        
       ];
       setScrappedItems(data);
     };

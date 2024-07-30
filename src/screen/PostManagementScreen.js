@@ -7,18 +7,24 @@ import {
   StyleSheet,
   Alert,
 } from 'react-native';
-import { Ionicons, FontAwesome } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import axios from 'axios';
 
 const PostManagementScreen = () => {
   const [posts, setPosts] = useState([]);
   const navigation = useNavigation();
+  const route = useRoute();
+  const { user_id } = route.params;  // Get user_id from route params
 
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const response = await axios.get('http://13.125.20.36:3000/api/questions');
+        const response = await axios.get(`http://13.125.20.36:3000/api/questions`, {
+          params: {
+            user_id: user_id  // Pass user_id as a query parameter
+          }
+        });
         setPosts(response.data);
       } catch (error) {
         console.error('Error fetching posts:', error);
@@ -26,7 +32,7 @@ const PostManagementScreen = () => {
     };
 
     fetchPosts();
-  }, []);
+  }, [user_id]);
 
   const handleDeletePost = (postId) => {
     Alert.alert(
@@ -76,9 +82,8 @@ const PostManagementScreen = () => {
           <Ionicons name="arrow-back" size={30} color="white" />
         </TouchableOpacity>
         <View style={styles.headerTextContainer}>
-            <Text style={styles.headerTitle}>게시글 관리</Text>
+          <Text style={styles.headerTitle}>게시글 관리</Text>
         </View>
-        
       </View>
       <FlatList
         data={posts}

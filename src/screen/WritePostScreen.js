@@ -1,62 +1,40 @@
 import React, { useState } from 'react';
-import { View, TextInput, Text, Button, StyleSheet, TouchableOpacity, Switch, Image, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, TextInput, Text, TouchableOpacity, Switch, ScrollView, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
 import { addQuestion, updateQuestion } from '../api';
 
 const WritePostScreen = ({ route }) => {
-  const { userInfo, post, isEditing } = route.params;
+  const { userInfo, post, isEditing, category_id } = route.params;
   const [title, setTitle] = useState(isEditing ? post.title : '');
   const [content, setContent] = useState(isEditing ? post.content : '');
-  // const [media, setMedia] = useState(isEditing ? post.media : null);
   const [anonymous, setAnonymous] = useState(false);
   const [error, setError] = useState('');
-  const [status, requestPermission] = ImagePicker.useMediaLibraryPermissions();
   const navigation = useNavigation();
-
-  // const pickMedia = async () => {
-  //   if (!status?.granted) {
-  //     const permission = await requestPermission();
-  //     if (!permission.granted) {
-  //       alert('사진 접근 권한이 필요합니다!');
-  //       return null;
-  //     }
-  //   }
-  //   let result = await ImagePicker.launchImageLibraryAsync({
-  //     mediaTypes: ImagePicker.MediaTypeOptions.All,
-  //     allowsEditing: false,
-  //     quality: 1,
-  //   });
-
-  //   if (!result.canceled) {
-  //     setMedia(result.uri);
-  //   }
-  // };
 
   const handleSave = async () => {
     const newPost = {
       title,
       content,
-      category_id: 1, // Set a default category id or let the user select one
+      category_id: category_id, // Use passed category_id
       user_id: userInfo.user_id,
       username: anonymous ? '익명' : userInfo.nickname,
       likes: 0,
       scrapped: false,
-      liked: false,       
+      liked: false,
     };
 
-    console.log(newPost);
+    console.log('New Post Data:', newPost);
 
     try {
       if (isEditing) {
-        await updateQuestion(post.user_id, newPost);
+        await updateQuestion(post.id, newPost); // Update the post with the correct ID
       } else {
         await addQuestion(newPost);
       }
       navigation.goBack();
     } catch (err) {
-      console.error('Error saving post', err);
+      console.error('Error saving post', err.response?.data || err.message || err);
       setError('게시글 저장에 실패했습니다.');
     }
   };
@@ -90,12 +68,6 @@ const WritePostScreen = ({ route }) => {
               onChangeText={setContent}
               multiline
             />
-            {/* <View style={styles.mediaContainer}>
-              <TouchableOpacity onPress={pickMedia} style={styles.mediaButton}>
-                <Text style={styles.mediaButtonText}>미디어 추가</Text>
-              </TouchableOpacity>
-              {media && <Image source={{ uri: media }} style={styles.media} />}
-            </View> */}
             <View style={styles.switchContainer}>
               <Text>익명으로 게시</Text>
               <Switch value={anonymous} onValueChange={setAnonymous} />
@@ -124,7 +96,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#ffffff',
-    padding: 16,
+    //padding: 16,
     width: '100%',
   },
   header: {
@@ -164,24 +136,6 @@ const styles = StyleSheet.create({
   contentInput: {
     height: 150,
     textAlignVertical: 'top',
-  },
-  mediaContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 8,
-  },
-  mediaButton: {
-    padding: 8,
-    backgroundColor: '#2c3e50',
-    borderRadius: 8,
-    marginRight: 8,
-  },
-  mediaButtonText: {
-    color: 'white',
-  },
-  media: {
-    width: 100,
-    height: 100,
   },
   switchContainer: {
     flexDirection: 'row',

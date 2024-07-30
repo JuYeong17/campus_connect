@@ -44,7 +44,7 @@ const HomeScreen = ({ navigation, route }) => {
   return (
     <View style={styles.container}>
       <View style={styles.logoContainer}>
-        <Image source={require("./favicon.png")} style={styles.logo} />
+        <Image source={require("./cc.png")} style={styles.logo} />
       </View>
 
       {localIsLoggedIn ? (
@@ -85,7 +85,6 @@ const HomeScreen = ({ navigation, route }) => {
         </View>
       </Modal>
 
-      <Text>반가워요! {userInfo.nickname}{userInfo.email}{userInfo.password}님!</Text>
 
       <TouchableOpacity
         style={styles.button}

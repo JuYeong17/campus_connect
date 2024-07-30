@@ -1,11 +1,12 @@
+// JobBoardScreen.js
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { Provider } from 'react-native-paper';
 import moment from 'moment';
-import 'moment/locale/ko'; // Import Korean locale
+import 'moment/locale/ko';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { getQuestions, addQuestion, toggleLike, toggleScrap } from '../api'; // Import API functions
+import { getQuestionsByCategory, toggleLike, toggleScrap } from '../api';
 
 const JobBoardScreen = () => {
   const [questions, setQuestions] = useState([]);
@@ -32,21 +33,11 @@ const JobBoardScreen = () => {
 
   const fetchQuestions = async () => {
     try {
-      const response = await getQuestions();
+      const response = await getQuestionsByCategory(1); // 카테고리 ID가 1인 게시물만 가져오기
       setQuestions(response);
       setFilteredQuestions(response);
     } catch (error) {
       console.error('Error fetching questions:', error);
-    }
-  };
-
-  const handleAddQuestion = async (newQuestion) => {
-    try {
-      const response = await addQuestion(newQuestion);
-      setQuestions([response, ...questions]);
-      setFilteredQuestions([response, ...questions]);
-    } catch (error) {
-      console.error('Error adding question:', error);
     }
   };
 
@@ -76,6 +67,11 @@ const JobBoardScreen = () => {
     }
   };
 
+  const handleAddPost = (newPost) => {
+    setQuestions([newPost, ...questions]);
+    setFilteredQuestions([newPost, ...questions]);
+  };
+
   const formatRelativeTime = (time) => {
     const questionTime = moment(time);
     return moment().diff(questionTime, 'days') >= 1 ? questionTime.format('YYYY-MM-DD') : questionTime.fromNow();
@@ -88,7 +84,7 @@ const JobBoardScreen = () => {
       <View style={styles.row}>
         <Ionicons name="person-circle" size={18} color="#2c3e50" />
         <Text style={styles.username}>{item.username}</Text>
-        <Text style={styles.time}>{formatRelativeTime(item.time)}</Text>
+        <Text style={styles.time}>{formatRelativeTime(item.created_at)}</Text>
       </View>
       <View style={styles.separator} />
       <View style={styles.interactions}>
@@ -133,7 +129,7 @@ const JobBoardScreen = () => {
           keyExtractor={item => item.id.toString()}
           contentContainerStyle={styles.listContainer}
         />
-        <TouchableOpacity style={styles.writeButton} onPress={() => navigation.navigate('WritePostScreen', { addQuestion: handleAddQuestion, userInfo })}>
+        <TouchableOpacity style={styles.writeButton} onPress={() => navigation.navigate('WritePostScreen', { userInfo, category_id: 1 })}>
           <Ionicons name="pencil" size={24} color="white" />
         </TouchableOpacity>
       </View>

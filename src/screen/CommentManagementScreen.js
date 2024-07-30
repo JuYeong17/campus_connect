@@ -19,9 +19,8 @@ const CommentManagementScreen = () => {
   useEffect(() => {
     // Fetch the comments from an API or database
     const initialComments = [
-      { id: '1', content: '이것은 댓글 1입니다.', username: 'user1', time: '2024-07-22T10:00:00Z', likes: 5, hasLiked: false },
-      { id: '2', content: '이것은 댓글 2입니다.', username: 'user2', time: '2024-07-22T11:00:00Z', likes: 3, hasLiked: false },
-      { id: '3', content: '이것은 댓글 3입니다.', username: 'user3', time: '2024-07-22T12:00:00Z', likes: 1, hasLiked: false },
+      { id: '1', content: '저도 막막하네요ㅠㅠ', username: 'minsu', time: '2024-07-22T10:00:00Z', likes: 1, hasLiked: false },
+
     ];
     setComments(initialComments);
   }, []);
