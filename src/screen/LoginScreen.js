@@ -37,8 +37,8 @@ const LoginScreen = ({ navigation, setIsLoggedIn, setUserId, setSelectedUniversi
         <Text style={styles.label}>아이디</Text>
         <TextInput
           style={styles.input}
-          placeholder="아이디"
-          placeholderTextColor="#ffffff"
+          placeholder="아이디를 입력하세요..."
+          placeholderTextColor="#ccc"
           value={userId}
           onChangeText={setUserIdInput}
         />
@@ -47,8 +47,8 @@ const LoginScreen = ({ navigation, setIsLoggedIn, setUserId, setSelectedUniversi
         <Text style={styles.label}>비밀번호</Text>
         <TextInput
           style={styles.input}
-          placeholder="비밀번호"
-          placeholderTextColor="#ffffff"
+          placeholder="비밀번호를 입력하세요..."
+          placeholderTextColor="#ccc"
           secureTextEntry={true}
           value={password}
           onChangeText={setPassword}

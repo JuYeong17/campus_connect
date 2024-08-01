@@ -10,11 +10,10 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { getStoredUserInfo } from '../api';
+import { getStoredUserInfo, deleteUser } from '../api';
 
 const MyPageScreen = () => {
   const navigation = useNavigation();
-  const route = useRoute();
   const [userInfo, setUserInfo] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -36,10 +35,28 @@ const MyPageScreen = () => {
 
 
 
-  const deleteAccount = () => {
-    // 회원탈퇴 로직
-    Alert.alert("회원탈퇴", "회원탈퇴가 완료되었습니다.", [{ text: "확인" }]);
-    navigation.navigate("Home", {isLoggedIn: false,});
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      "회원탈퇴",
+      "정말로 회원탈퇴를 하시겠습니까?",
+      [
+        { text: "취소", style: "cancel" },
+        {
+          text: "확인",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteUser(userInfo.id);
+              Alert.alert("회원탈퇴", "회원탈퇴가 완료되었습니다.");
+              navigation.navigate("Home", { isLoggedIn: false });
+            } catch (error) {
+              Alert.alert("오류", "회원탈퇴 중 오류가 발생했습니다.");
+              console.error('Error deleting account:', error);
+            }
+          },
+        },
+      ]
+    );
   };
 
   if (loading) {
@@ -128,7 +145,7 @@ const MyPageScreen = () => {
 
       <View style={styles.section}>
         <Text style={styles.title}>회원탈퇴</Text>
-        <TouchableOpacity style={styles.deleteButton} onPress={deleteAccount}>
+        <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteAccount}>
           <Text style={styles.deleteButtonText}>회원탈퇴</Text>
         </TouchableOpacity>
       </View>

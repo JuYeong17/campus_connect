@@ -154,3 +154,13 @@ export const getQuestionsByCategory = async (category_id) => {
     throw error;
   }
 };
+
+export const deleteUser = async (id) => {
+  try {
+    const response = await api.delete(`/users/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    throw error;
+  }
+};
