@@ -1,11 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Alert, Image, Keyboard } from 'react-native';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Menu, Provider, Dialog, Portal, RadioButton } from 'react-native-paper';
 import { Button as PaperButton } from 'react-native-paper'
+import axios from 'axios';
+import { getStoredUserInfo } from '../api';
 import moment from 'moment';
 import 'moment/locale/ko'; 
+
+
 
 const formatRelativeTime = (time) => {
   const postTime = moment(time);
@@ -14,7 +18,7 @@ const formatRelativeTime = (time) => {
 
 const PostDetailScreen = () => {
   const route = useRoute();
-  const { post, userInfo } = route.params;
+  const { post } = route.params;
   const [likes, setLikes] = useState(post.likes);
   const [liked, setLiked] = useState(false);
   const [scrapped, setScrapped] = useState(post.scrapped);
@@ -26,8 +30,27 @@ const PostDetailScreen = () => {
   const [reportReason, setReportReason] = useState('');
   const [editVisible, setEditVisible] = useState(false);
   const [deleteVisible, setDeleteVisible] = useState(false);
+  const [userInfo, setUserInfo] = useState(null);
 
   moment.locale('ko');
+
+  useEffect(() => {
+    
+    const fetchUserInfo = async () => {
+      try {
+        const response = await getStoredUserInfo();
+        if (response && response.user) {
+          setUserInfo(response.user); // Assuming response.user contains the user info
+        } else {
+          console.warn('No user info found or response format is incorrect.');
+        }
+      } catch (err) {
+        console.error('Error fetching user info:', err);
+      }
+    };
+    fetchUserInfo();
+    console.log("detail: ",userInfo);
+  }, []);
 
   const toggleLike = () => {
     setLikes(likes + (liked ? -1 : 1));
@@ -72,7 +95,7 @@ const PostDetailScreen = () => {
   };
 
   const navigateToAnswerDetail = () => {
-    navigation.navigate('AnswerDetailScreen', { addAnswer, userInfo });
+    navigation.navigate('AnswerDetailScreen', { addAnswer, userInfo, post });
   };
 
   const handleCommentClick = (answerId) => {
@@ -173,7 +196,7 @@ const PostDetailScreen = () => {
     </View>
   );
 
-  const sortedAnswers = [...answers].sort((a, b) => new Date(a.time) - new Date(b.time)); // Sort answers by creation time
+  const sortedAnswers = [...answers].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)); // Sort answers by creation time
 
 
   return (
@@ -185,7 +208,7 @@ const PostDetailScreen = () => {
           </TouchableOpacity>
           <View style={styles.headerTextContainer}>
             <Text style={styles.headerTitle}>취업게시판</Text>
-            <Text style={styles.headerSubtitle}>{userInfo.selectedUniversity}</Text>
+            <Text style={styles.headerSubtitle}>{userInfo ? userInfo.univ_name : "로딩중..."}</Text>
           </View>
           <Menu
             visible={menuVisible}
@@ -210,7 +233,7 @@ const PostDetailScreen = () => {
               <View style={styles.postUserTime}>
                 <Ionicons name="person-circle" size={18} color="#2c3e50" />
                 <Text style={styles.username}>{post.username}</Text>
-                <Text style={styles.time}>{formatRelativeTime(post.time)}</Text>
+                <Text style={styles.time}>{formatRelativeTime(post.created_at)}</Text>
               </View> 
               <View style={styles.separator} />            
               <View style={styles.interactions}>                
@@ -231,7 +254,7 @@ const PostDetailScreen = () => {
               <View style={styles.answerUserTimeContainer}>
                 <Ionicons name="person-circle" size={18} color="#2c3e50" />
                 <Text style={styles.answerUsername}>{item.answers_nickname}</Text>
-                <Text style={styles.answerTime}>{formatRelativeTime(item.time)}</Text>
+                <Text style={styles.answerTime}>{formatRelativeTime(item.created_at)}</Text>
               </View>
               <Text style={styles.answerContent}>A. {item.content}</Text>
               {item.media && <Image source={{ uri: item.media }} style={styles.answerMedia} />}

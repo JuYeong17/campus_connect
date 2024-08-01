@@ -87,4 +87,25 @@ router.delete('/:id', (req, res) => {
   });
 });
 
+// Get questions authored by user or questions answered by user
+router.get('/user/posts/:user_id', (req, res) => {
+  const { user_id } = req.params;
+  // SQL query to fetch questions authored by user or questions answered by user
+  const query = `
+    SELECT DISTINCT q.*
+    FROM questions q
+    LEFT JOIN answers a ON q.id = a.question_id
+    WHERE q.user_id = ? OR a.user_id = ?;
+  `;
+
+  connection.query(query, [user_id, user_id], (error, results) => {
+    if (error) {
+      console.error('Error fetching user-related questions:', error);
+      return res.status(500).json({ error: error.message });
+    }
+    // Sending results in the response
+    res.json(results);
+  });
+});
+
 module.exports = router;

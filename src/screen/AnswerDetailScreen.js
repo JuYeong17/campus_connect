@@ -1,15 +1,44 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Alert, StyleSheet, Image, TouchableOpacity, Switch } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import moment from 'moment';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import axios from 'axios';
+import { getStoredUserInfo } from '../api';
+
 
 const AnswerDetailScreen = ({ route, navigation }) => {
-  const { addAnswer, userInfo } = route.params;
+  const { addAnswer, post } = route.params;
   const [content, setContent] = useState('');
   const [media, setMedia] = useState(null);
   const [status, requestPermission] = ImagePicker.useMediaLibraryPermissions();
+  const [userInfo, setUserInfo] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchUserInfo = async () => {
+    try {
+      const user = await getStoredUserInfo();
+      if (user && user.user) {
+        setUserInfo(user.user);
+      } else {
+        console.warn('User info not found.');
+      }
+    } catch (error) {
+      console.error('Error fetching user info:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUserInfo();
+  }, []);
+
+  if (loading) {
+    // Show loading state or spinner if needed
+    return <View style={styles.container}><Text>Loading...</Text></View>;
+  }
 
   if (!userInfo || !userInfo.nickname) {
     Alert.alert(
@@ -46,19 +75,32 @@ const AnswerDetailScreen = ({ route, navigation }) => {
     }
   };
 
-  const handleSubmit = () => {
+const handleSubmit = async () => {
+  try {
     const newAnswer = {
-      id: String(new Date().getTime()),
       content,
-      image_url: media,
+      image_url: media ? media : null,  // Ensure `image_url` can be null
+      question_id: post.id,
+      user_id: userInfo.id,
       answers_nickname: userInfo.nickname,
-      user_id: userInfo.user_id,
-      time : moment().toISOString(),
-  
+      like_count: 0,  // Initialize like_count to 0
+      created_at: moment().toISOString(),  // Adjust date format
+      is_selected: 0,  // Use 0 for false, assuming tinyint(1)
+      selected_at: null,  // Set to null initially
     };
-    addAnswer(newAnswer);
-    navigation.goBack();
-  };
+
+    const response = await axios.post('http://13.125.20.36:3000/api/answers', newAnswer);
+    if (response.status === 201) {
+      Alert.alert('성공', '답변이 추가되었습니다.');
+      addAnswer(newAnswer);
+      navigation.goBack();
+    }
+  } catch (error) {
+    console.error('Error submitting answer:', error.response || error.message);
+    Alert.alert('오류', '답변 제출 중 오류가 발생했습니다.');
+  }
+};
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>

@@ -6,16 +6,20 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import axios from 'axios';
+import { getStoredUserInfo } from '../api';
 
 const PostManagementScreen = () => {
   const [posts, setPosts] = useState([]);
   const navigation = useNavigation();
   const route = useRoute();
+
   const { user_id } = route.params;  // Get user_id from route params
+
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -33,6 +37,8 @@ const PostManagementScreen = () => {
 
     fetchPosts();
   }, [user_id]);
+
+  
 
   const handleDeletePost = (postId) => {
     Alert.alert(
@@ -74,6 +80,7 @@ const PostManagementScreen = () => {
       </TouchableOpacity>
     </View>
   );
+
 
   return (
     <View style={styles.container}>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,20 +6,57 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { getStoredUserInfo } from '../api';
 
 const MyPageScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { userInfo } = route.params;
+  const [userInfo, setUserInfo] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const info = await getStoredUserInfo();
+        setUserInfo(info.user || {});
+      } catch (error) {
+        console.error('Error fetching user info:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserInfo();
+    console.log(userInfo);
+  }, []);
+
+
 
   const deleteAccount = () => {
     // 회원탈퇴 로직
     Alert.alert("회원탈퇴", "회원탈퇴가 완료되었습니다.", [{ text: "확인" }]);
     navigation.navigate("Home", {isLoggedIn: false,});
   };
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#2c3e50" />
+      </View>
+    );
+  }
+
+  if (!userInfo) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.errorText}>사용자 정보를 불러올 수 없습니다.</Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container}>
@@ -28,7 +65,7 @@ const MyPageScreen = () => {
       </TouchableOpacity>      
       <View style={styles.header}>
         <Ionicons name="person-circle" size={100} color="#2c3e50" />
-        <Text style={styles.welcomeText}>반가워요, {userInfo.nickname}님</Text>
+        <Text style={styles.welcomeText}>반가워요, {userInfo ? userInfo.nickname : "로딩중..."}님</Text>
       </View>
 
       <View style={styles.section}>

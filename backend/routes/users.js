@@ -34,15 +34,26 @@ router.get('/:id', (req, res) => {
   });
 });
 
-// 사용자 업데이트
 router.put('/:id', (req, res) => {
   const { id } = req.params;
-  const user = req.body;
-  connection.query('UPDATE users SET ? WHERE id = ?', [user, id], (error, results) => {
+  const { nickname, password } = req.body; // Expecting nickname and password
+
+  // Validate inputs
+  if (!nickname && !password) {
+    return res.status(400).json({ error: 'No fields to update' });
+  }
+
+  // Construct the SQL update query dynamically
+  const fields = {};
+  if (nickname) fields.nickname = nickname;
+  if (password) fields.password = password; // Ensure password is hashed appropriately
+
+  connection.query('UPDATE users SET ? WHERE id = ?', [fields, id], (error, results) => {
     if (error) {
+      console.error('Database error:', error);
       return res.status(500).json({ error: error.message });
     }
-    res.json(results);
+    res.json({ success: true, message: 'User updated successfully', results });
   });
 });
 

@@ -7,37 +7,42 @@ import {
   StyleSheet,
   Alert,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import { getUserInfo, updateUserInfo } from '../api';
+import { updateUserInfo } from '../api';
+import { getStoredUserInfo } from '../api';
+
+
 
 const AccountInfoScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const userId = route.params?.userId;
 
-  const [username, setUsername] = useState("");
   const [nickname, setNickname] = useState("");
-  const [email, setEmail] = useState("");
+  const [userInfo, setUserInfo] = useState(null);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchUserInfo = async () => {
       try {
-        const userInfo = await getUserInfo(userId);
-        setUsername(userInfo.user_id);
-        setNickname(userInfo.nickname);
-        setEmail(userInfo.email);
+        const info = await getStoredUserInfo();
+        setUserInfo(info.user || {});
+        setNickname(info.nickname);
       } catch (error) {
         console.error('Error fetching user info:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchUserInfo();
-  }, [userId]);
+    console.log(userInfo);
+  }, []);
 
   const handleSave = async () => {
     if (newPassword !== confirmPassword) {
@@ -50,13 +55,29 @@ const AccountInfoScreen = () => {
         nickname,
         password: newPassword ? newPassword : currentPassword,
       };
-      await updateUserInfo(userId, updatedUser);
+      await updateUserInfo(userInfo.id, updatedUser);
       Alert.alert("저장 완료", "계정 정보가 성공적으로 업데이트되었습니다.");
     } catch (error) {
       console.error('Error updating user info:', error);
       Alert.alert("오류", "계정 정보 업데이트에 실패했습니다.");
     }
   };
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#2c3e50" />
+      </View>
+    );
+  }
+
+  if (!userInfo) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.errorText}>사용자 정보를 불러올 수 없습니다.</Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container}>
@@ -68,10 +89,7 @@ const AccountInfoScreen = () => {
 
       <View style={styles.inputContainer}>
         <Text style={styles.label}>아이디</Text>
-        <TextInput
-          style={styles.input}
-          value={username}
-        />
+        <TextInput style={styles.input} value={userInfo.user_id} editable={false} />
       </View>
 
       <View style={styles.inputContainer}>
@@ -85,10 +103,7 @@ const AccountInfoScreen = () => {
 
       <View style={styles.inputContainer}>
         <Text style={styles.label}>이메일</Text>
-        <TextInput
-          style={styles.input}
-          value={email}
-        />
+        <TextInput style={styles.input} value={userInfo.email} editable={false} />
       </View>
 
       <View style={styles.inputContainer}>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Image, Modal, FlatList } from "react-native";
 import axios from "axios";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const HomeScreen = ({ navigation, route }) => {
   const [localIsLoggedIn, setLocalIsLoggedIn] = useState(false);
@@ -13,14 +14,14 @@ const HomeScreen = ({ navigation, route }) => {
     if (route.params?.isLoggedIn !== undefined) {
       setLocalIsLoggedIn(route.params.isLoggedIn);
       setLocalSelectedUniversity(route.params.selectedUniversity || "");
-      setUserInfo({
-        user_id: route.params.user_id || "",
-        selectedUniversity: route.params.selectedUniversity || "",
-        nickname: route.params.nickname || "",
-        email: route.params.email || "",
-        points : route.params.points || "",
-        password : route.params.password || "",
-      });
+      // setUserInfo({
+      //   user_id: route.params.user_id || "",
+      //   selectedUniversity: route.params.selectedUniversity || "",
+      //   nickname: route.params.nickname || "",
+      //   email: route.params.email || "",
+      //   points : route.params.points || "",
+      //   password : route.params.password || "",
+      // });
     }
   }, [route.params]);
 
@@ -34,6 +35,27 @@ const HomeScreen = ({ navigation, route }) => {
       });
   }, []);
 
+  useEffect(() => {
+    // Fetch user info when logged in
+    const fetchUserInfo = async () => {
+      try {
+        if (localIsLoggedIn) {
+          const storedUserInfo = await AsyncStorage.getItem('userInfo');
+          if (storedUserInfo) {
+            const parsedUserInfo = JSON.parse(storedUserInfo);
+            setUserInfo(parsedUserInfo);
+            console.log('Fetched user info:', parsedUserInfo); // Debug log
+          } else {
+            console.log('No user info found in AsyncStorage.');
+          }
+        }
+      } catch (error) {
+        console.error('Error retrieving user info:', error);
+      }
+    };
+
+    fetchUserInfo();
+  }, [localIsLoggedIn]); // Refetch when login status changes
 
 
   const selectUniversity = (univName) => {
@@ -88,7 +110,7 @@ const HomeScreen = ({ navigation, route }) => {
 
       <TouchableOpacity
         style={styles.button}
-        onPress={() => navigation.navigate("JobBoard", { userInfo })}
+        onPress={() => navigation.navigate("JobBoard")}
       >
         <Text style={styles.buttonText}>취업게시판</Text>
       </TouchableOpacity>

@@ -15,11 +15,17 @@ router.get('/', (req, res) => {
 // 답변 추가
 router.post('/', (req, res) => {
   const answer = req.body;
+
+  // Validate input data
+  if (!answer.content || !answer.question_id || !answer.user_id || !answer.answers_nickname) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
   connection.query('INSERT INTO answers SET ?', answer, (error, results) => {
     if (error) {
       return res.status(500).json({ error: error.message });
     }
-    res.status(201).json(results);
+    res.status(201).json({ id: results.insertId, ...answer });
   });
 });
 

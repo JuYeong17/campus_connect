@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 
 const api = axios.create({
@@ -7,9 +8,29 @@ const api = axios.create({
 export const loginUser = async (user_id, password) => {
   try {
     const response = await api.post('/auth/login', { user_id, password });
-    return response.data;
+    // Check if response.data contains the expected user info
+    if (response.data) {
+      await AsyncStorage.setItem('userInfo', JSON.stringify(response.data));
+      return response.data;
+    } else {
+      throw new Error('Login response does not contain user info.');
+    }
   } catch (error) {
     console.error('Error logging in:', error);
+    throw error;
+  }
+};
+
+export const getStoredUserInfo = async () => {
+  try {
+    const userInfo = await AsyncStorage.getItem('userInfo');
+    if (userInfo) {
+      return JSON.parse(userInfo);
+    } else {
+      return null;
+    }
+  } catch (error) {
+    console.error('Error retrieving user info:', error);
     throw error;
   }
 };
@@ -46,10 +67,17 @@ export const getUserInfo = async (id) => {
 
 export const updateUserInfo = async (id, userInfo) => {
   try {
-    const response = await api.put(`/users/${id}`, userInfo);
+    const updatedFields = {};
+    if (userInfo.nickname) updatedFields.nickname = userInfo.nickname;
+    if (userInfo.password) updatedFields.password = userInfo.password;
+
+    // Log the data being sent
+    console.log(`Sending update for user ID ${id}:`, updatedFields);
+
+    const response = await api.put(`/users/${id}`, updatedFields);
     return response.data;
   } catch (error) {
-    console.error('Error updating user info:', error);
+    console.error('Error updating user info:', error.response?.data || error.message);
     throw error;
   }
 };

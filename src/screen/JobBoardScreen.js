@@ -5,7 +5,7 @@ import { Provider } from 'react-native-paper';
 import moment from 'moment';
 import 'moment/locale/ko';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
-import { getQuestionsByCategory, toggleLike, toggleScrap } from '../api';
+import { getQuestionsByCategory, toggleLike, toggleScrap, getStoredUserInfo } from '../api';
 
 const JobBoardScreen = () => {
   const [questions, setQuestions] = useState([]);
@@ -13,7 +13,8 @@ const JobBoardScreen = () => {
   const [filteredQuestions, setFilteredQuestions] = useState([]);
   const navigation = useNavigation();
   const route = useRoute();
-  const { userInfo } = route.params;
+  const [userInfo, setUserInfo] = useState(null);
+  //const { userInfo } = route.params;
 
   const fetchQuestions = async () => {
     try {
@@ -30,11 +31,26 @@ const JobBoardScreen = () => {
     }
   };
 
+  // Fetch data when the screen gains focus
   useFocusEffect(
-    useCallback(() => {
-      fetchQuestions();
-    }, []) // No dependency needed for sortOrder since it's always descending
+    React.useCallback(() => {
+      const fetchData = async () => {
+        try {
+          await fetchQuestions();
+          const response = await getStoredUserInfo();
+          console.log('Fetched user info:', response); // Full response for debugging
+          setUserInfo(response.user || {}); // Extract user object or set empty object if `user` is not available
+        } catch (error) {
+          console.error('Error fetching user info:', error);
+        }
+      };
+      fetchData();
+    }, []),
   );
+
+  useEffect(() => {
+    console.log('Updated userInfo:', userInfo);
+  }, [userInfo]);
 
   useEffect(() => {
     if (searchQuery) {
@@ -144,7 +160,7 @@ const JobBoardScreen = () => {
           <View style={styles.headerTextContainer}>
             <Text style={styles.headerTitle}>취업게시판</Text>
             <Text style={styles.headerSubtitle}>
-              {userInfo.selectedUniversity}
+              {userInfo ? userInfo.univ_name : '대학 정보 없음'}
             </Text>
           </View>
           <View style={styles.headerIcons}>
@@ -177,7 +193,6 @@ const JobBoardScreen = () => {
           style={styles.writeButton}
           onPress={() =>
             navigation.navigate('WritePostScreen', {
-              userInfo,
               category_id: 1,
               onAddPost: handleAddPost, // Pass the callback
             })

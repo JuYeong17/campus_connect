@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   TextInput,
@@ -12,22 +12,40 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { addQuestion, updateQuestion } from '../api';
+import { addQuestion, updateQuestion, getStoredUserInfo } from '../api';
 
 const WritePostScreen = ({ route }) => {
-  const { userInfo, post, isEditing, category_id, onAddPost } = route.params;
+  const { post, isEditing, category_id, onAddPost } = route.params;
   const [title, setTitle] = useState(isEditing ? post.title : '');
   const [content, setContent] = useState(isEditing ? post.content : '');
   const [anonymous, setAnonymous] = useState(false);
   const [error, setError] = useState('');
+  const [userInfo, setUserInfo] = useState(null);
   const navigation = useNavigation();
 
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const response = await getStoredUserInfo();
+        setUserInfo(response.user || {}); // Set user info
+      } catch (err) {
+        console.error('Error fetching user info:', err);
+      }
+    };
+
+    fetchUserInfo();
+  }, []);
+
   const handleSave = async () => {
+    if (!userInfo) {
+      setError('사용자 정보를 불러올 수 없습니다.');
+      return;
+    }
     const newPost = {
       title,
       content,
       category_id: category_id,
-      user_id: userInfo.user_id,
+      user_id: userInfo.id,
       username: anonymous ? '익명' : userInfo.nickname,
       likes: 0,
       scrapped: false,
