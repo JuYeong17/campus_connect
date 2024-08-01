@@ -164,3 +164,13 @@ export const deleteUser = async (id) => {
     throw error;
   }
 };
+
+export const updateUserPoints = async (userId, points) => {
+  try {
+    const response = await api.put(`/answers/choose/${userId}`, { points });
+    return response.data;
+  } catch (error) {
+    console.error('Error updating user points:', error);
+    throw error;
+  }
+};

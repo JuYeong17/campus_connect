@@ -5,7 +5,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { Menu, Provider, Dialog, Portal, RadioButton } from 'react-native-paper';
 import { Button as PaperButton } from 'react-native-paper'
 import axios from 'axios';
-import { getStoredUserInfo } from '../api';
+import { getStoredUserInfo  } from '../api';
 import moment from 'moment';
 import 'moment/locale/ko'; 
 

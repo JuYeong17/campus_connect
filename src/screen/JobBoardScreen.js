@@ -7,6 +7,7 @@ import 'moment/locale/ko';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import { getQuestionsByCategory, toggleLike, toggleScrap, getStoredUserInfo } from '../api';
 
+
 const JobBoardScreen = () => {
   const [questions, setQuestions] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -50,6 +51,7 @@ const JobBoardScreen = () => {
 
   useEffect(() => {
     console.log('Updated userInfo:', userInfo);
+    
   }, [userInfo]);
 
   useEffect(() => {
@@ -160,7 +162,7 @@ const JobBoardScreen = () => {
           <View style={styles.headerTextContainer}>
             <Text style={styles.headerTitle}>취업게시판</Text>
             <Text style={styles.headerSubtitle}>
-              {userInfo ? userInfo.univ_name : '대학 정보 없음'}
+              {userInfo ? userInfo.univ_name : '로딩중...'}
             </Text>
           </View>
           <View style={styles.headerIcons}>
