@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Image, TouchableOpacity, Switch } from 'react-native';
+import { View, Text, TextInput, Alert, StyleSheet, Image, TouchableOpacity, Switch } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import moment from 'moment';
+import { useNavigation, useRoute } from '@react-navigation/native';
 
 const AnswerDetailScreen = ({ route, navigation }) => {
   const { addAnswer, userInfo } = route.params;
@@ -11,10 +12,19 @@ const AnswerDetailScreen = ({ route, navigation }) => {
   const [status, requestPermission] = ImagePicker.useMediaLibraryPermissions();
 
   if (!userInfo || !userInfo.nickname) {
-    alert('User information is missing.');
+    Alert.alert(
+      "경고",
+      `답변을 작성하려면 로그인하십시오.`,
+      [ 
+        {
+          text: "확인", 
+          onPress: () => navigation.goBack()
+        }
+      ],
+      { cancelable: false }
+    );
     return null;
   }
-
 
 
   const pickImage = async () => {

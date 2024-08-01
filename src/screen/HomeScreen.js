@@ -124,7 +124,7 @@ const HomeScreen = ({ navigation, route }) => {
         )}
       </View>
 
-      <TouchableOpacity
+      {/* <TouchableOpacity
         style={[
           styles.logoutButton,
           {
@@ -139,7 +139,7 @@ const HomeScreen = ({ navigation, route }) => {
         <Text style={styles.loginandoutText}>
           {localIsLoggedIn ? "로그아웃" : "로그인"}
         </Text>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
     </View>
   );
 };

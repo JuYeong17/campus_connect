@@ -113,7 +113,7 @@ const PostDetailScreen = () => {
       [ 
         {
           text: "확인", 
-          onPress: () => console.log("Report confirmed") // 나중에 신고 디비로 넘기기
+          onPress: () => navigation.goBack() // 나중에 신고 디비로 넘기기
         }
       ],
       { cancelable: false }
@@ -230,7 +230,7 @@ const PostDetailScreen = () => {
             <View style={styles.answerContainer}>
               <View style={styles.answerUserTimeContainer}>
                 <Ionicons name="person-circle" size={18} color="#2c3e50" />
-                <Text style={styles.answerUsername}>{item.username}</Text>
+                <Text style={styles.answerUsername}>{item.answers_nickname}</Text>
                 <Text style={styles.answerTime}>{formatRelativeTime(item.time)}</Text>
               </View>
               <Text style={styles.answerContent}>A. {item.content}</Text>
