@@ -15,6 +15,8 @@ const AnswerDetailScreen = ({ route, navigation }) => {
     return null;
   }
 
+
+
   const pickImage = async () => {
     if (!status?.granted) {
       const permission = await requestPermission();
@@ -38,15 +40,15 @@ const AnswerDetailScreen = ({ route, navigation }) => {
     const newAnswer = {
       id: String(new Date().getTime()),
       content,
-      media,
-      username: userInfo.nickname,
-      time: moment().toISOString(),  // 현재 시간을 ISO 8601 형식으로 저장
+      image_url: media,
+      answers_nickname: userInfo.nickname,
+      user_id: userInfo.user_id,
+      time : moment().toISOString(),
+  
     };
-
     addAnswer(newAnswer);
     navigation.goBack();
   };
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>

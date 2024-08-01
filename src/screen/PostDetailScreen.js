@@ -175,6 +175,7 @@ const PostDetailScreen = () => {
 
   const sortedAnswers = [...answers].sort((a, b) => new Date(a.time) - new Date(b.time)); // Sort answers by creation time
 
+
   return (
     <Provider>
       <View style={styles.container}>
@@ -239,7 +240,9 @@ const PostDetailScreen = () => {
                   <Ionicons name="chatbubble-outline" size={20} color="black" />
                   <Text style={styles.commentCount}>{item.comments ? item.comments.length : 0}</Text>
                 </TouchableOpacity>
-                
+                <TouchableOpacity onPress={() => handleSelectAnswer(item.id)} style={styles.iconWithText}>
+                  <Text>채택</Text>
+                </TouchableOpacity>
               </View>
               {renderComments(item.comments, item.id)}
             </View>

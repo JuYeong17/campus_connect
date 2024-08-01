@@ -98,6 +98,7 @@ const styles = StyleSheet.create({
     height: 40,
     backgroundColor: "#ffffff",
     paddingLeft: 10,
+    borderRadius: 5,
   },
   loginButton: {
     backgroundColor: "#f39c12",
@@ -110,11 +111,13 @@ const styles = StyleSheet.create({
   loginButtonText: {
     color: "#ffffff",
     fontWeight: "bold",
+    fontSize: 15,
   },
   signupText: {
     marginTop: 20,
     color: "#ffffff",
     textDecorationLine: "underline",
+    fontSize: 13,
   },
   errorText: {
     color: 'red',

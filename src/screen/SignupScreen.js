@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 10,
-    width: "100%", // 전체 너비를 사용
+    width: "100%", // 전체 너비를 사용    
   },
   label: {
     fontSize: 18,
@@ -260,6 +260,7 @@ const styles = StyleSheet.create({
     height: 40,
     backgroundColor: "#ffffff", // 흰색 배경
     paddingLeft: 10,
+    borderRadius: 5,
   },
   separator: {
     borderBottomColor: "#ffffff",
@@ -309,7 +310,7 @@ const styles = StyleSheet.create({
   },
   authBox: {
     marginTop: 10,
-    backgroundColor: "#bdc3c7",
+    backgroundColor: "#ffffff",
     padding: 10,
     borderRadius: 5,
   },
@@ -341,6 +342,7 @@ const styles = StyleSheet.create({
   completeButtonText: {
     color: "#ffffff",
     fontWeight: "bold",
+    fontSize: 15,
   },
   loginText: {
     marginTop: 20,

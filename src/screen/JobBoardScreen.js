@@ -1,11 +1,10 @@
-// JobBoardScreen.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { Provider } from 'react-native-paper';
 import moment from 'moment';
 import 'moment/locale/ko';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import { getQuestionsByCategory, toggleLike, toggleScrap } from '../api';
 
 const JobBoardScreen = () => {
@@ -16,10 +15,26 @@ const JobBoardScreen = () => {
   const route = useRoute();
   const { userInfo } = route.params;
 
-  useEffect(() => {
-    moment.locale('ko');
-    fetchQuestions();
-  }, []);
+  const fetchQuestions = async () => {
+    try {
+      const response = await getQuestionsByCategory(1); // Fetch questions for category ID 1
+      console.log('Fetched questions:', response);
+
+      // Sort questions by id in descending order by default
+      const sortedQuestions = response.sort((a, b) => b.id - a.id);
+
+      setQuestions(sortedQuestions);
+      setFilteredQuestions(sortedQuestions);
+    } catch (error) {
+      console.error('Error fetching questions:', error);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchQuestions();
+    }, []) // No dependency needed for sortOrder since it's always descending
+  );
 
   useEffect(() => {
     if (searchQuery) {
@@ -30,16 +45,6 @@ const JobBoardScreen = () => {
       setFilteredQuestions(questions);
     }
   }, [searchQuery, questions]);
-
-  const fetchQuestions = async () => {
-    try {
-      const response = await getQuestionsByCategory(1); // 카테고리 ID가 1인 게시물만 가져오기
-      setQuestions(response);
-      setFilteredQuestions(response);
-    } catch (error) {
-      console.error('Error fetching questions:', error);
-    }
-  };
 
   const handleToggleLike = async (id, liked) => {
     try {
@@ -68,17 +73,29 @@ const JobBoardScreen = () => {
   };
 
   const handleAddPost = (newPost) => {
-    setQuestions([newPost, ...questions]);
-    setFilteredQuestions([newPost, ...questions]);
+    if (!newPost.id) {
+      console.error('New post is missing an id:', newPost);
+      return; // Exit if the new post doesn't have an ID
+    }
+    const updatedQuestions = [newPost, ...questions];
+    setQuestions(updatedQuestions);
+    setFilteredQuestions(updatedQuestions);
   };
 
   const formatRelativeTime = (time) => {
     const questionTime = moment(time);
-    return moment().diff(questionTime, 'days') >= 1 ? questionTime.format('YYYY-MM-DD') : questionTime.fromNow();
+    return moment().diff(questionTime, 'days') >= 1
+      ? questionTime.format('YYYY-MM-DD')
+      : questionTime.fromNow();
   };
 
   const renderItem = ({ item }) => (
-    <TouchableOpacity style={styles.postContainer} onPress={() => navigation.navigate('PostDetailScreen', { post: item, userInfo })}>
+    <TouchableOpacity
+      style={styles.postContainer}
+      onPress={() =>
+        navigation.navigate('PostDetailScreen', { post: item, userInfo })
+      }
+    >
       <Text style={styles.title}>Q. {item.title}</Text>
       <Text style={styles.content}>{item.content}</Text>
       <View style={styles.row}>
@@ -88,12 +105,26 @@ const JobBoardScreen = () => {
       </View>
       <View style={styles.separator} />
       <View style={styles.interactions}>
-        <TouchableOpacity onPress={() => handleToggleLike(item.id, item.liked)} style={styles.iconWithText}>
-          <FontAwesome name={item.liked ? "heart" : "heart-o"} size={14} color="black" />
+        <TouchableOpacity
+          onPress={() => handleToggleLike(item.id, item.liked)}
+          style={styles.iconWithText}
+        >
+          <FontAwesome
+            name={item.liked ? 'heart' : 'heart-o'}
+            size={14}
+            color="black"
+          />
           <Text style={styles.interactionText}>공감 {item.likes}</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => handleToggleScrap(item.id, item.scrapped)} style={styles.iconWithText}>
-          <FontAwesome name={item.scrapped ? "bookmark" : "bookmark-o"} size={14} color="black" />
+        <TouchableOpacity
+          onPress={() => handleToggleScrap(item.id, item.scrapped)}
+          style={styles.iconWithText}
+        >
+          <FontAwesome
+            name={item.scrapped ? 'bookmark' : 'bookmark-o'}
+            size={14}
+            color="black"
+          />
           <Text style={styles.interactionText}>스크랩</Text>
         </TouchableOpacity>
       </View>
@@ -104,12 +135,17 @@ const JobBoardScreen = () => {
     <Provider>
       <View style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backIcon} onPress={() => navigation.goBack()}>
+          <TouchableOpacity
+            style={styles.backIcon}
+            onPress={() => navigation.goBack()}
+          >
             <Ionicons name="arrow-back" size={30} color="white" />
           </TouchableOpacity>
           <View style={styles.headerTextContainer}>
             <Text style={styles.headerTitle}>취업게시판</Text>
-            <Text style={styles.headerSubtitle}>{userInfo.selectedUniversity}</Text>
+            <Text style={styles.headerSubtitle}>
+              {userInfo.selectedUniversity}
+            </Text>
           </View>
           <View style={styles.headerIcons}>
             <TouchableOpacity
@@ -118,7 +154,9 @@ const JobBoardScreen = () => {
             >
               <Ionicons name="search" size={24} color="white" />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => navigation.navigate('MyPage', { userInfo })}>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('MyPage', { userInfo })}
+            >
               <Ionicons name="person" size={24} color="white" />
             </TouchableOpacity>
           </View>
@@ -126,10 +164,25 @@ const JobBoardScreen = () => {
         <FlatList
           data={filteredQuestions}
           renderItem={renderItem}
-          keyExtractor={item => item.id.toString()}
+          keyExtractor={(item) => {
+            if (!item.id) {
+              console.error('Question item is missing an id:', item);
+              return '';
+            }
+            return item.id.toString();
+          }}
           contentContainerStyle={styles.listContainer}
         />
-        <TouchableOpacity style={styles.writeButton} onPress={() => navigation.navigate('WritePostScreen', { userInfo, category_id: 1 })}>
+        <TouchableOpacity
+          style={styles.writeButton}
+          onPress={() =>
+            navigation.navigate('WritePostScreen', {
+              userInfo,
+              category_id: 1,
+              onAddPost: handleAddPost, // Pass the callback
+            })
+          }
+        >
           <Ionicons name="pencil" size={24} color="white" />
         </TouchableOpacity>
       </View>

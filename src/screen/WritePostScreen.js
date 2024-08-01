@@ -1,11 +1,21 @@
 import React, { useState } from 'react';
-import { View, TextInput, Text, TouchableOpacity, Switch, ScrollView, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
+import {
+  View,
+  TextInput,
+  Text,
+  TouchableOpacity,
+  Switch,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { addQuestion, updateQuestion } from '../api';
 
 const WritePostScreen = ({ route }) => {
-  const { userInfo, post, isEditing, category_id } = route.params;
+  const { userInfo, post, isEditing, category_id, onAddPost } = route.params;
   const [title, setTitle] = useState(isEditing ? post.title : '');
   const [content, setContent] = useState(isEditing ? post.content : '');
   const [anonymous, setAnonymous] = useState(false);
@@ -16,7 +26,7 @@ const WritePostScreen = ({ route }) => {
     const newPost = {
       title,
       content,
-      category_id: category_id, // Use passed category_id
+      category_id: category_id,
       user_id: userInfo.user_id,
       username: anonymous ? '익명' : userInfo.nickname,
       likes: 0,
@@ -28,9 +38,11 @@ const WritePostScreen = ({ route }) => {
 
     try {
       if (isEditing) {
-        await updateQuestion(post.id, newPost); // Update the post with the correct ID
+        await updateQuestion(post.id, newPost);
+        onAddPost({ ...newPost, id: post.id, created_at: post.created_at }); // Update the existing post
       } else {
-        await addQuestion(newPost);
+        const response = await addQuestion(newPost);
+        onAddPost({ ...newPost, id: response.id, created_at: new Date().toISOString() });
       }
       navigation.goBack();
     } catch (err) {
@@ -42,16 +54,21 @@ const WritePostScreen = ({ route }) => {
   return (
     <KeyboardAvoidingView
       style={styles.keyboardAvoidingView}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.container}>
           <View style={styles.header}>
-            <TouchableOpacity style={styles.backIcon} onPress={() => navigation.goBack()}>
+            <TouchableOpacity
+              style={styles.backIcon}
+              onPress={() => navigation.goBack()}
+            >
               <Ionicons name="arrow-back" size={30} color="white" />
             </TouchableOpacity>
             <View style={styles.headerTextContainer}>
-              <Text style={styles.headerTitle}>{isEditing ? '답변 수정' : '질문 작성'}</Text>
+              <Text style={styles.headerTitle}>
+                {isEditing ? '답변 수정' : '질문 작성'}
+              </Text>
             </View>
           </View>
           <View style={styles.contentContainer}>
@@ -74,7 +91,9 @@ const WritePostScreen = ({ route }) => {
             </View>
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
             <TouchableOpacity onPress={handleSave} style={styles.submitButton}>
-              <Text style={styles.submitButtonText}>{isEditing ? '수정' : '저장'}</Text>
+              <Text style={styles.submitButtonText}>
+                {isEditing ? '수정' : '저장'}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -90,13 +109,12 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flexGrow: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   container: {
     flex: 1,
     backgroundColor: '#ffffff',
-    //padding: 16,
     width: '100%',
   },
   header: {
