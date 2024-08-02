@@ -12,38 +12,27 @@ router.get('/', (req, res) => {
   });
 });
 
-// 댓글 추가
-router.post('/', (req, res) => {
-  const comment = req.body;
-  connection.query('INSERT INTO comments SET ?', comment, (error, results) => {
+// 특정 답변에 대한 댓글 가져오기
+router.get('/:answerId', (req, res) => {
+  const { answerId } = req.params;
+  connection.query('SELECT * FROM comments WHERE answer_id = ?', [answerId], (error, results) => {
     if (error) {
       return res.status(500).json({ error: error.message });
     }
-    res.status(201).json(results);
+    res.json(results);
   });
 });
 
-router.get('/answer/:answerId', (req, res) => {
-  const { answerId } = req.params;
-  connection.query(
-    'SELECT comments.*, users.nickname as username FROM comments JOIN users ON comments.user_id = users.id WHERE answer_id = ?',
-    [answerId],
-    (error, results) => {
-      if (error) {
-        return res.status(500).json({ error: error.message });
-      }
-      res.json(results);
-    }
-  );
-});
-// 특정 댓글 가져오기
-router.get('/:id', (req, res) => {
-  const { id } = req.params;
-  connection.query('SELECT * FROM comments WHERE id = ?', [id], (error, results) => {
+// 댓글 추가
+router.post('/', (req, res) => {
+  const { content, answer_id, user_id } = req.body;
+  const newComment = { content, answer_id, user_id, created_at: new Date() };
+  
+  connection.query('INSERT INTO comments SET ?', newComment, (error, results) => {
     if (error) {
       return res.status(500).json({ error: error.message });
     }
-    res.json(results[0]);
+    res.status(201).json({ id: results.insertId, ...newComment });
   });
 });
 

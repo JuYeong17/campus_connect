@@ -1,20 +1,13 @@
-// PostDetailScreen.js
-
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Alert, Image, Keyboard } from 'react-native';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Menu, Provider, Dialog, Portal, RadioButton } from 'react-native-paper';
-import { Button as PaperButton } from 'react-native-paper';
+import { Button as PaperButton } from 'react-native-paper'
 import axios from 'axios';
-import { getStoredUserInfo, getCommentsByAnswerId, addCommentToAnswer } from '../api'; // 추가
+import { getStoredUserInfo, addComment } from '../api'; // 추가된 API
 import moment from 'moment';
-import 'moment/locale/ko';
-
-const formatRelativeTime = (time) => {
-  const postTime = moment(time);
-  return moment().diff(postTime, 'days') >= 1 ? postTime.format('YYYY-MM-DD') : postTime.fromNow();
-};
+import 'moment/locale/ko'; 
 
 const PostDetailScreen = () => {
   const route = useRoute();
@@ -39,7 +32,7 @@ const PostDetailScreen = () => {
       try {
         const response = await getStoredUserInfo();
         if (response && response.user) {
-          setUserInfo(response.user); // Assuming response.user contains the user info
+          setUserInfo(response.user); // 사용자 정보 설정
         } else {
           console.warn('No user info found or response format is incorrect.');
         }
@@ -47,26 +40,10 @@ const PostDetailScreen = () => {
         console.error('Error fetching user info:', err);
       }
     };
-    fetchUserInfo();
-    console.log("detail: ",userInfo);
-  }, []);
 
-  useEffect(() => {
-    const fetchCommentsForAnswers = async () => {
-      try {
-        const updatedAnswers = await Promise.all(
-          post.answers.map(async (answer) => {
-            const comments = await getCommentsByAnswerId(answer.id);
-            return { ...answer, comments };
-          })
-        );
-        setAnswers(updatedAnswers);
-      } catch (error) {
-        console.error('Error fetching comments for answers:', error);
-      }
-    };
-    fetchCommentsForAnswers();
-  }, [post.answers]);
+    fetchUserInfo();
+    console.log("detail: ", userInfo);
+  }, []);
 
   const toggleLike = () => {
     setLikes(likes + (liked ? -1 : 1));
@@ -78,7 +55,17 @@ const PostDetailScreen = () => {
   };
 
   const addAnswer = (newAnswer) => {
-    setAnswers((prevAnswers) => [newAnswer, ...prevAnswers]); // Add the new answer to the list
+    setAnswers((prevAnswers) => [newAnswer, ...prevAnswers]);
+  };
+
+  const handleAddComment = async (answerId, content) => {
+    try {
+      const newComment = await addComment(answerId, content, userInfo.id);
+      addComment(answerId, newComment); // 상태 업데이트
+      setCommenting(null); // 댓글 입력 상태 초기화
+    } catch (error) {
+      Alert.alert('댓글 추가 오류', '댓글을 추가하는 중 오류가 발생했습니다.');
+    }
   };
 
   const addComment = (answerId, newComment) => {
@@ -100,7 +87,7 @@ const PostDetailScreen = () => {
                   ? {
                       ...comment,
                       likes: comment.hasLiked ? comment.likes - 1 : comment.likes + 1,
-                      hasLiked: !comment.hasLiked, // Toggle the like status
+                      hasLiked: !comment.hasLiked, // 좋아요 상태 토글
                     }
                   : comment
               ),
@@ -116,7 +103,7 @@ const PostDetailScreen = () => {
 
   const handleCommentClick = (answerId) => {
     setCommenting(answerId);
-    Keyboard.dismiss(); // Dismiss keyboard when starting to comment
+    Keyboard.dismiss();
   };
 
   const handleCloseCommentInput = () => {
@@ -134,14 +121,12 @@ const PostDetailScreen = () => {
   };
 
   const handleEditButtonClick = () => {
-    setMenuVisible(false); // Close the menu
-    // Handle the edit action here
+    setMenuVisible(false);
     setEditVisible(true);
   };
 
   const handleDeleteButtonClick = () => {
-    setMenuVisible(false); // Close the menu
-    // Handle the delete action here
+    setMenuVisible(false);
     setDeleteVisible(true);
   };
 
@@ -192,7 +177,7 @@ const PostDetailScreen = () => {
             <View style={styles.commentUserTimeContainer}>
               <Ionicons name="person-circle" size={18} color="#2c3e50" />
               <Text style={styles.commentUsername}>{comment.username}</Text>
-              <Text style={styles.commentTime}>{formatRelativeTime(comment.created_at)}</Text> {/* Time 수정 */}
+              <Text style={styles.commentTime}>{formatRelativeTime(comment.created_at)}</Text>
             </View>
             <Text style={styles.commentContent}>{comment.content}</Text>
             <View style={styles.commentActions}>
@@ -207,14 +192,13 @@ const PostDetailScreen = () => {
           </View>
         ))}
       {commenting === answerId && (
-        <AddComment answerId={answerId} addComment={addComment} onClose={handleCloseCommentInput} />
+        <AddComment answerId={answerId} addComment={handleAddComment} onClose={handleCloseCommentInput} />
       )}
     </View>
   );
 
-  const sortedAnswers = [...answers].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)); // Sort answers by creation time
+  const sortedAnswers = [...answers].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)); // 답변 생성 시간 기준 정렬
 
-  // Check if the current user is the author of the post
   const isAuthor = userInfo && userInfo.id === post.user_id;
 
   return (
@@ -251,7 +235,6 @@ const PostDetailScreen = () => {
           ListHeaderComponent={
             <View style={styles.postContainer}>
               <Text style={styles.title}>Q. {post.title}</Text>
-
               <Text style={styles.content}>{post.content}</Text>
               <View style={styles.postUserTime}>
                 <Ionicons name="person-circle" size={18} color="#2c3e50" />
@@ -353,26 +336,19 @@ const AddComment = ({ answerId, addComment, onClose }) => {
   const [comment, setComment] = useState('');
 
   const handleAddComment = async () => {
+    if (comment.trim() === '') {
+      Alert.alert('댓글 추가 오류', '댓글 내용을 입력해주세요.');
+      return;
+    }
+
     try {
-      // 사용자 정보를 가져와서 댓글 작성 시 필요한 데이터를 포함합니다.
-      const userInfo = await getStoredUserInfo();
-
-      const newCommentData = {
-        content: comment,
-        answer_id: answerId,
-        user_id: userInfo.id,
-      };
-
-      // 서버에 댓글 추가 요청을 보냅니다.
-      const newComment = await addCommentToAnswer(newCommentData);
-
-      // 새로 추가된 댓글을 화면에 반영합니다.
-      addComment(answerId, { ...newComment, username: userInfo.nickname });
-
+      const userId = userInfo.id; // 현재 로그인한 사용자의 ID 가져오기
+      const newComment = await addComment(answerId, comment, userId);
+      addComment(answerId, newComment); // 상태 업데이트
       setComment('');
-      onClose(); // Close the input box after adding comment
+      onClose(); // 입력창 닫기
     } catch (error) {
-      console.error('Error adding comment:', error);
+      Alert.alert('댓글 추가 오류', '댓글을 추가하는 중 오류가 발생했습니다.');
     }
   };
 
@@ -431,7 +407,7 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: '#ffffff',
     margin: 16,
-    borderRadius: 8,
+    borderRadius: 8,    
   },
   postUserTime: {
     flexDirection: 'row',

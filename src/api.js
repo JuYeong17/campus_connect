@@ -92,7 +92,6 @@ export const getQuestions = async () => {
   }
 };
 
-
 export const getQuestionsByUsername = async (user_id) => {
   try {
     const response = await api.get(`/questions/${user_id}`);
@@ -102,7 +101,6 @@ export const getQuestionsByUsername = async (user_id) => {
     throw error;
   }
 };
-
 
 export const addQuestion = async (question) => {
   try {
@@ -174,19 +172,13 @@ export const updateUserPoints = async (userId, points) => {
     throw error;
   }
 };
-export const getCommentsByAnswerId = async (answerId) => {
+export const addComment = async (answerId, content, userId) => {
   try {
-    const response = await api.get(`/comments/answer/${answerId}`);
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching comments:', error);
-    throw error;
-  }
-};
-
-export const addCommentToAnswer = async (comment) => {
-  try {
-    const response = await api.post('/comments', comment);
+    const response = await api.post('/comments', {
+      content,
+      answer_id: answerId,
+      user_id: userId
+    });
     return response.data;
   } catch (error) {
     console.error('Error adding comment:', error);
