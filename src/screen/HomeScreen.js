@@ -52,6 +52,16 @@ const HomeScreen = ({ navigation, route }) => {
     fetchUserInfo();
   }, [localIsLoggedIn]); // Refetch when login status changes
 
+  // Handle user logout
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem('userInfo'); // Remove user info from AsyncStorage
+      setUserInfo(null); // Clear the userInfo state
+      setLocalIsLoggedIn(false); // Set login status to false
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  };
 
   const selectUniversity = (univName) => {
     setLocalSelectedUniversity(univName);
@@ -102,7 +112,6 @@ const HomeScreen = ({ navigation, route }) => {
         </View>
       </Modal>
 
-
       <TouchableOpacity
         style={styles.button}
         onPress={() => navigation.navigate("JobBoard")}
@@ -124,7 +133,7 @@ const HomeScreen = ({ navigation, route }) => {
               <Text style={styles.authText}>마이페이지</Text>
             </TouchableOpacity>
             <Text style={styles.separator}> | </Text>
-            <TouchableOpacity onPress={() => setLocalIsLoggedIn(false)}>
+            <TouchableOpacity onPress={handleLogout}>
               <Text style={styles.authText}>로그아웃</Text>
             </TouchableOpacity>
           </>
