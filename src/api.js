@@ -167,7 +167,7 @@ export const deleteUser = async (id) => {
 
 export const updateUserPoints = async (userId, points) => {
   try {
-    const response = await api.put(`/answers/choose/${userId}`, { points });
+    const response = await api.put(`/points/${userId}`, { points }); // Updated to match the new route
     return response.data;
   } catch (error) {
     console.error('Error updating user points:', error);

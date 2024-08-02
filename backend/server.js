@@ -10,6 +10,7 @@ const answerRoutes = require('./routes/answers');
 const commentRoutes = require('./routes/comments');
 const likeRoutes = require('./routes/likes');
 const authRoutes = require('./routes/auth');
+const pointsRoutes = require('./routes/points');
 const connection = require('./config/db'); // MySQL 데이터베이스 연결 가져오기
 
 const app = express();
@@ -26,6 +27,7 @@ app.use('/api/answers', answerRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/likes', likeRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/points', pointsRoutes);
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
