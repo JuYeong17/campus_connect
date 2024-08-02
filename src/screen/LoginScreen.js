@@ -17,14 +17,14 @@ const LoginScreen = ({ navigation, setIsLoggedIn, setUserId, setSelectedUniversi
       navigation.navigate('Home', {
         isLoggedIn: true,
         selectedUniversity: response.user.univ_name,
-        user_id: response.user.user_id,  // Add this line to pass user_id
-        password : response.user.password,
+        user_id: response.user.id,  // 이 부분이 중요합니다.
+        password: response.user.password,
         nickname: response.user.nickname,
         email: response.user.email,
-        points : response.user.points,
+        points: response.user.points,
       });
     } catch (err) {
-      console.error('Login failed:', err);
+      console.error('로그인 실패:', err);
       setError('로그인에 실패했습니다. 아이디와 비밀번호를 확인해주세요.');
     }
   };
@@ -64,7 +64,6 @@ const LoginScreen = ({ navigation, setIsLoggedIn, setUserId, setSelectedUniversi
     </View>
   );
 };
-
 
 const styles = StyleSheet.create({
   container: {
