@@ -23,6 +23,19 @@ router.post('/', (req, res) => {
   });
 });
 
+router.get('/answer/:answerId', (req, res) => {
+  const { answerId } = req.params;
+  connection.query(
+    'SELECT comments.*, users.nickname as username FROM comments JOIN users ON comments.user_id = users.id WHERE answer_id = ?',
+    [answerId],
+    (error, results) => {
+      if (error) {
+        return res.status(500).json({ error: error.message });
+      }
+      res.json(results);
+    }
+  );
+});
 // 특정 댓글 가져오기
 router.get('/:id', (req, res) => {
   const { id } = req.params;

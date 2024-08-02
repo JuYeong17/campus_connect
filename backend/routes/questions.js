@@ -39,6 +39,7 @@ router.get('/category/:category_id', (req, res) => {
 });
 
 // 질문 추가
+// 질문 추가
 router.post('/', (req, res) => {
   const question = req.body;
   connection.query('INSERT INTO questions SET ?', question, (error, results) => {
@@ -46,9 +47,12 @@ router.post('/', (req, res) => {
       console.error('Error adding question:', error); // 로그 추가
       return res.status(500).json({ error: error.message });
     }
-    res.status(201).json(results);
+    // 삽입된 질문의 ID를 반환
+    const insertedId = results.insertId; // 자동 생성된 ID를 가져옴
+    res.status(201).json({ id: insertedId, ...question });
   });
 });
+
 
 // 특정 질문 가져오기
 router.get('/:id', (req, res) => {

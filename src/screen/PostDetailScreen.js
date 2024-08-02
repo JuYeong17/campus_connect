@@ -1,15 +1,15 @@
+// PostDetailScreen.js
+
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Alert, Image, Keyboard } from 'react-native';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Menu, Provider, Dialog, Portal, RadioButton } from 'react-native-paper';
-import { Button as PaperButton } from 'react-native-paper'
+import { Button as PaperButton } from 'react-native-paper';
 import axios from 'axios';
-import { getStoredUserInfo  } from '../api';
+import { getStoredUserInfo, getCommentsByAnswerId, addCommentToAnswer } from '../api'; // 추가
 import moment from 'moment';
-import 'moment/locale/ko'; 
-
-
+import 'moment/locale/ko';
 
 const formatRelativeTime = (time) => {
   const postTime = moment(time);
@@ -35,7 +35,6 @@ const PostDetailScreen = () => {
   moment.locale('ko');
 
   useEffect(() => {
-    
     const fetchUserInfo = async () => {
       try {
         const response = await getStoredUserInfo();
@@ -51,6 +50,23 @@ const PostDetailScreen = () => {
     fetchUserInfo();
     console.log("detail: ",userInfo);
   }, []);
+
+  useEffect(() => {
+    const fetchCommentsForAnswers = async () => {
+      try {
+        const updatedAnswers = await Promise.all(
+          post.answers.map(async (answer) => {
+            const comments = await getCommentsByAnswerId(answer.id);
+            return { ...answer, comments };
+          })
+        );
+        setAnswers(updatedAnswers);
+      } catch (error) {
+        console.error('Error fetching comments for answers:', error);
+      }
+    };
+    fetchCommentsForAnswers();
+  }, [post.answers]);
 
   const toggleLike = () => {
     setLikes(likes + (liked ? -1 : 1));
@@ -133,9 +149,9 @@ const PostDetailScreen = () => {
     Alert.alert(
       "게시글 신고 접수",
       `해당 게시물이 ${reportReason} 사유로 신고 접수되었습니다.`,
-      [ 
+      [
         {
-          text: "확인", 
+          text: "확인",
           onPress: () => navigation.goBack() // 나중에 신고 디비로 넘기기
         }
       ],
@@ -148,7 +164,7 @@ const PostDetailScreen = () => {
     Alert.alert(
       "게시글 수정",
       "게시글 수정 기능은 현재 준비 중입니다.",
-      [ 
+      [
         { text: "확인", onPress: () => console.log("Edit Confirmed") }
       ],
       { cancelable: false }
@@ -160,7 +176,7 @@ const PostDetailScreen = () => {
     Alert.alert(
       "게시글 삭제",
       "게시글 삭제 기능은 현재 준비 중입니다.",
-      [ 
+      [
         { text: "확인", onPress: () => console.log("Delete Confirmed") }
       ],
       { cancelable: false }
@@ -176,9 +192,9 @@ const PostDetailScreen = () => {
             <View style={styles.commentUserTimeContainer}>
               <Ionicons name="person-circle" size={18} color="#2c3e50" />
               <Text style={styles.commentUsername}>{comment.username}</Text>
-              <Text style={styles.commentTime}>{formatRelativeTime(comment.time)}</Text>
-            </View>            
-            <Text style={styles.commentContent}>{comment.content}</Text>            
+              <Text style={styles.commentTime}>{formatRelativeTime(comment.created_at)}</Text> {/* Time 수정 */}
+            </View>
+            <Text style={styles.commentContent}>{comment.content}</Text>
             <View style={styles.commentActions}>
               <TouchableOpacity onPress={() => toggleCommentLike(answerId, comment.id)} style={styles.iconWithText}>
                 <FontAwesome name={comment.hasLiked ? 'heart' : 'heart-o'} size={14} color="black" />
@@ -233,17 +249,17 @@ const PostDetailScreen = () => {
         </View>
         <FlatList
           ListHeaderComponent={
-            <View style={styles.postContainer}>              
+            <View style={styles.postContainer}>
               <Text style={styles.title}>Q. {post.title}</Text>
-              
-              <Text style={styles.content}>{post.content}</Text> 
+
+              <Text style={styles.content}>{post.content}</Text>
               <View style={styles.postUserTime}>
                 <Ionicons name="person-circle" size={18} color="#2c3e50" />
                 <Text style={styles.username}>{post.username}</Text>
                 <Text style={styles.time}>{formatRelativeTime(post.created_at)}</Text>
-              </View> 
-              <View style={styles.separator} />            
-              <View style={styles.interactions}>                
+              </View>
+              <View style={styles.separator} />
+              <View style={styles.interactions}>
                 <TouchableOpacity onPress={toggleLike} style={styles.iconWithText}>
                   <FontAwesome name={liked ? 'heart' : 'heart-o'} size={14} color="black" />
                   <Text> 공감 {likes}</Text>
@@ -277,7 +293,7 @@ const PostDetailScreen = () => {
               {renderComments(item.comments, item.id)}
             </View>
           )}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item.id.toString()}
         />
         {commenting === null && (
           <TouchableOpacity style={styles.floatingButton} onPress={navigateToAnswerDetail}>
@@ -336,19 +352,28 @@ const PostDetailScreen = () => {
 const AddComment = ({ answerId, addComment, onClose }) => {
   const [comment, setComment] = useState('');
 
-  const handleAddComment = () => {
-    const newComment = {
-      id: Math.random().toString(),
-      content: comment,
-      username: 'user2',
-      likes: 0,
-      hasLiked: false, // Track if the comment is liked
-      time: new Date().toISOString(),
-    };
+  const handleAddComment = async () => {
+    try {
+      // 사용자 정보를 가져와서 댓글 작성 시 필요한 데이터를 포함합니다.
+      const userInfo = await getStoredUserInfo();
 
-    addComment(answerId, newComment);
-    setComment('');
-    onClose(); // Close the input box after adding comment
+      const newCommentData = {
+        content: comment,
+        answer_id: answerId,
+        user_id: userInfo.id,
+      };
+
+      // 서버에 댓글 추가 요청을 보냅니다.
+      const newComment = await addCommentToAnswer(newCommentData);
+
+      // 새로 추가된 댓글을 화면에 반영합니다.
+      addComment(answerId, { ...newComment, username: userInfo.nickname });
+
+      setComment('');
+      onClose(); // Close the input box after adding comment
+    } catch (error) {
+      console.error('Error adding comment:', error);
+    }
   };
 
   return (
@@ -406,7 +431,7 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: '#ffffff',
     margin: 16,
-    borderRadius: 8,    
+    borderRadius: 8,
   },
   postUserTime: {
     flexDirection: 'row',
@@ -416,12 +441,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom : 5,
+    marginBottom: 5,
   },
   username: {
     fontSize: 12,
     color: '#7f8c8d',
-    marginRight : 10,
+    marginRight: 10,
   },
   content: {
     fontSize: 16,
@@ -452,8 +477,8 @@ const styles = StyleSheet.create({
     margin: 16,
     borderRadius: 8,
   },
-  answerUserTimeContainer:{
-    flexDirection : 'row',
+  answerUserTimeContainer: {
+    flexDirection: 'row',
   },
   answerTitle: {
     fontSize: 16,
@@ -470,7 +495,7 @@ const styles = StyleSheet.create({
   },
   answerFooter: {
     flexDirection: 'row',
-    justifyContent : 'flex-start',
+    justifyContent: 'flex-start',
     marginTop: 10,
   },
   answerUsername: {
@@ -488,14 +513,14 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     marginTop: 10,
   },
-  commentUserTimeContainer:{
-    flexDirection : 'row',
-    alignItems : 'center'
+  commentUserTimeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   commentUsername: {
     color: '#7f8c8d',
-    fontSize : 12,
-    marginRight : 10,
+    fontSize: 12,
+    marginRight: 10,
   },
   commentContent: {
     fontSize: 12,
@@ -533,20 +558,20 @@ const styles = StyleSheet.create({
   },
   commentButton: {
     marginRight: 10,
-    flexDirection : 'row',
-    alignItems : 'center',    
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   commentCount: {
     marginLeft: 4,
   },
   submitButton: {
-    backgroundColor : '#2c3e50',
+    backgroundColor: '#2c3e50',
     paddingHorizontal: 7,
     paddingVertical: 10,
-    borderRadius : 5,
+    borderRadius: 5,
   },
   submitButtonText: {
-    color : 'white',
+    color: 'white',
   },
   radioContainer: {
     flexDirection: 'column',

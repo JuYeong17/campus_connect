@@ -174,3 +174,22 @@ export const updateUserPoints = async (userId, points) => {
     throw error;
   }
 };
+export const getCommentsByAnswerId = async (answerId) => {
+  try {
+    const response = await api.get(`/comments/answer/${answerId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching comments:', error);
+    throw error;
+  }
+};
+
+export const addCommentToAnswer = async (comment) => {
+  try {
+    const response = await api.post('/comments', comment);
+    return response.data;
+  } catch (error) {
+    console.error('Error adding comment:', error);
+    throw error;
+  }
+};

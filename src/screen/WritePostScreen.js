@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import moment from 'moment';
 import {
   View,
   TextInput,
@@ -50,6 +51,7 @@ const WritePostScreen = ({ route }) => {
       likes: 0,
       scrapped: false,
       liked: false,
+      created_at: moment().utc().format(),
     };
 
     console.log('New Post Data:', newPost);
