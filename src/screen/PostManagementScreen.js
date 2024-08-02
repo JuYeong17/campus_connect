@@ -6,31 +6,39 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import axios from 'axios';
+import { getStoredUserInfo } from '../api';
 
 const PostManagementScreen = () => {
   const [posts, setPosts] = useState([]);
   const navigation = useNavigation();
   const route = useRoute();
 
-  const { user_id } = route.params; // 라우트 매개변수에서 user_id 가져오기
+  const { user_id } = route.params;  // Get user_id from route params
+
 
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        // 특정 사용자의 게시물 가져오기
-        const response = await axios.get(`http://13.125.20.36:3000/api/questions/user/${user_id}`);
+        const response = await axios.get('http://13.125.20.36:3000/api/questions', {
+          params: {
+            user_id: user_id  // Pass user_id as a query parameter
+          }
+        });
         setPosts(response.data);
       } catch (error) {
-        console.error('게시물 가져오기 오류:', error);
+        console.error('Error fetching posts:', error);
       }
     };
 
     fetchPosts();
   }, [user_id]);
+
+  
 
   const handleDeletePost = (postId) => {
     Alert.alert(
@@ -45,12 +53,12 @@ const PostManagementScreen = () => {
           text: "삭제",
           onPress: async () => {
             try {
-              await axios.delete(`http://13.125.20.36:3000/api/questions/${postId}`);
+              await axios.delete('http://13.125.20.36:3000/api/questions/${postId}');
               const updatedPosts = posts.filter(post => post.id !== postId);
               setPosts(updatedPosts);
               Alert.alert("삭제 완료", "게시글이 삭제되었습니다.");
             } catch (error) {
-              console.error('게시글 삭제 오류:', error);
+              console.error('Error deleting post:', error);
               Alert.alert("오류", "게시글 삭제에 실패했습니다.");
             }
           }
@@ -72,6 +80,7 @@ const PostManagementScreen = () => {
       </TouchableOpacity>
     </View>
   );
+
 
   return (
     <View style={styles.container}>

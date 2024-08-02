@@ -1,3 +1,4 @@
+// LoginScreen.js
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
@@ -11,23 +12,26 @@ const LoginScreen = ({ navigation, setIsLoggedIn, setUserId, setSelectedUniversi
   const handleLogin = async () => {
     try {
       const response = await loginUser(userId, password);
+      console.log('User Info:', response); // Debug: Check the user info received
+  
       setIsLoggedIn(true);
-      setUserId(response.user.id);
-      setSelectedUniversity(response.user.univ_name);
+      setUserId(response.id); // Ensure that the correct user ID is being set here
+      setSelectedUniversity(response.univ_name);
       navigation.navigate('Home', {
         isLoggedIn: true,
-        selectedUniversity: response.user.univ_name,
-        user_id: response.user.id,  // 이 부분이 중요합니다.
-        password: response.user.password,
-        nickname: response.user.nickname,
-        email: response.user.email,
-        points: response.user.points,
+        selectedUniversity: response.univ_name,
+        user_id: response.id, // Pass user_id correctly
+        password: response.password,
+        nickname: response.nickname,
+        email: response.email,
+        points: response.points,
       });
     } catch (err) {
       console.error('로그인 실패:', err);
       setError('로그인에 실패했습니다. 아이디와 비밀번호를 확인해주세요.');
     }
   };
+  
 
   return (
     <View style={styles.container}>
