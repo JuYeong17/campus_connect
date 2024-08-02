@@ -12,6 +12,27 @@ router.get('/', (req, res) => {
   });
 });
 
+// 특정 사용자가 작성한 질문 또는 답변한 질문 가져오기
+router.get('/user/posts/:user_id', (req, res) => {
+  const { user_id } = req.params;
+
+  // 사용자가 작성한 질문 또는 사용자가 답변한 질문 가져오기
+  const query = `
+    SELECT DISTINCT q.*
+    FROM questions q
+    LEFT JOIN answers a ON q.id = a.question_id
+    WHERE q.user_id = ? OR a.user_id = ?;
+  `;
+
+  connection.query(query, [user_id, user_id], (error, results) => {
+    if (error) {
+      console.error('사용자 관련 질문 가져오기 오류:', error);
+      return res.status(500).json({ error: error.message });
+    }
+    res.json(results);
+  });
+});
+
 // 사용자 추가
 router.post('/', (req, res) => {
   const user = req.body;

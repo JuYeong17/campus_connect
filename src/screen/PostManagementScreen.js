@@ -6,39 +6,31 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
-  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import axios from 'axios';
-import { getStoredUserInfo } from '../api';
 
 const PostManagementScreen = () => {
   const [posts, setPosts] = useState([]);
   const navigation = useNavigation();
   const route = useRoute();
 
-  const { user_id } = route.params;  // Get user_id from route params
-
+  const { user_id } = route.params; // 라우트 매개변수에서 user_id 가져오기
 
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const response = await axios.get(`http://13.125.20.36:3000/api/questions`, {
-          params: {
-            user_id: user_id  // Pass user_id as a query parameter
-          }
-        });
+        // 사용자와 관련된 게시물 가져오기
+        const response = await axios.get(`http://13.125.20.36:3000/api/questions/user/posts/${user_id}`);
         setPosts(response.data);
       } catch (error) {
-        console.error('Error fetching posts:', error);
+        console.error('게시물 가져오기 오류:', error);
       }
     };
 
     fetchPosts();
   }, [user_id]);
-
-  
 
   const handleDeletePost = (postId) => {
     Alert.alert(
@@ -58,7 +50,7 @@ const PostManagementScreen = () => {
               setPosts(updatedPosts);
               Alert.alert("삭제 완료", "게시글이 삭제되었습니다.");
             } catch (error) {
-              console.error('Error deleting post:', error);
+              console.error('게시글 삭제 오류:', error);
               Alert.alert("오류", "게시글 삭제에 실패했습니다.");
             }
           }
@@ -80,7 +72,6 @@ const PostManagementScreen = () => {
       </TouchableOpacity>
     </View>
   );
-
 
   return (
     <View style={styles.container}>
