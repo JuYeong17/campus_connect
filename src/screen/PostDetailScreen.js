@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Alert, Image, Keyboard } from 'react-native';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -16,7 +16,8 @@ const formatRelativeTime = (time) => {
 
 const PostDetailScreen = () => {
   const route = useRoute();
-  const { post } = route.params; // post 데이터에서 질문 ID를 가져옵니다.
+  const { post: initialPost } = route.params; // post 데이터에서 질문 ID를 가져옵니다.
+  const [post, setPost] = useState(initialPost);
   const [likes, setLikes] = useState(post.likes);
   const [liked, setLiked] = useState(false);
   const [scrapped, setScrapped] = useState(post.scrapped);
@@ -65,6 +66,31 @@ const PostDetailScreen = () => {
 
   //   fetchAnswers();
   // }, [post.id]);
+
+  useEffect(() => {
+    if (!post.id) return;
+  
+    const fetchPost = async () => {
+      try {
+        const response = await axios.get(`http://13.125.20.36:3000/api/questions/${post.id}`);
+        console.log('Post data:', response.data);
+        setPost(response.data);
+      } catch (error) {
+        if (error.response) {
+          console.error('Response error:', error.response);
+          Alert.alert('Error', `Server responded with status code ${error.response.status}`);
+        } else if (error.request) {
+          console.error('Request error:', error.request);
+          Alert.alert('Error', 'No response received from server');
+        } else {
+          console.error('Error message:', error.message);
+          Alert.alert('Error', 'An unexpected error occurred');
+        }
+      }
+    };
+  
+    fetchPost();
+  }, [post.id]);
 
   useEffect(() => {
     const fetchAnswers = async () => {
@@ -174,7 +200,7 @@ const PostDetailScreen = () => {
 
   const handleEditButtonClick = () => {
     setMenuVisible(false); // Close the menu
-    // Handle the edit action here
+    handleEditConfirm();
     setEditVisible(true);
   };
 
@@ -200,13 +226,15 @@ const PostDetailScreen = () => {
   };
 
   const handleEditConfirm = () => {
-    Alert.alert(
-      '게시글 수정',
-      '게시글 수정 기능은 현재 준비 중입니다.',
-      [{ text: '확인', onPress: () => console.log('Edit Confirmed') }],
-      { cancelable: false }
-    );
-    setEditVisible(false);
+    setMenuVisible(false);
+    navigation.navigate('WritePostScreen', {
+      post,
+      isEditing: true,
+      category_id: post.category_id,
+      onAddPost: (updatedPost) => {
+        setPost(updatedPost); // Update local state with the updated post
+      },
+    });
   };
 
   const handleDeleteConfirm = () => {
@@ -362,7 +390,7 @@ const PostDetailScreen = () => {
             </Dialog.Actions>
           </Dialog>
         </Portal>
-        <Portal>
+        {/* <Portal>
           <Dialog visible={editVisible} onDismiss={() => setEditVisible(false)}>
             <Dialog.Title>게시글 수정</Dialog.Title>
             <Dialog.Content>
@@ -383,7 +411,7 @@ const PostDetailScreen = () => {
               <PaperButton onPress={() => setDeleteVisible(false)}>확인</PaperButton>
             </Dialog.Actions>
           </Dialog>
-        </Portal>
+        </Portal> */}
       </View>
     </Provider>
   );
