@@ -77,7 +77,7 @@ router.post('/select/:id', (req, res) => {
   const { id } = req.params;
   const { userId } = req.body; // ID of the user who is marking the answer
 
-  connection.query('UPDATE answers SET selected = 1 WHERE id = ?', [id], (error, results) => {
+  connection.query('UPDATE answers SET is_selected = 1 WHERE id = ?', [id], (error, results) => {
     if (error) {
       return res.status(500).json({ error: error.message });
     }
