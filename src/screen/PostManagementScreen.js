@@ -21,8 +21,8 @@ const PostManagementScreen = () => {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        // 사용자와 관련된 게시물 가져오기
-        const response = await axios.get(`http://13.125.20.36:3000/api/questions/user/posts/${user_id}`);
+        // 특정 사용자의 게시물 가져오기
+        const response = await axios.get(`http://13.125.20.36:3000/api/questions/user/${user_id}`);
         setPosts(response.data);
       } catch (error) {
         console.error('게시물 가져오기 오류:', error);
