@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, Image, StyleSheet, Dimensions, TouchableOpacity, Alert, Modal, Button } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { updateUserPoints } from '../api'; // Assume this is the correct path to your API functions
+import { updateUserPoints, getStoredUserInfo,getUserInfo } from '../api'; // Assume this is the correct path to your API functions
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Dimensions for responsive design
 const { width } = Dimensions.get('window');
@@ -11,13 +12,38 @@ const PointShopScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const [selectedItem, setSelectedItem] = useState(null);
-  const { userInfo } = route.params;
-  const [userPoints, setUserPoints] = useState(userInfo.points);
+  const [UserInfo, setUserInfo] = useState(null);
+
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        
+        const info = await getStoredUserInfo();
+        setUserInfo(info.user || {});
+
+        // Refresh user info
+        const updatedUserInfo = await getUserInfo(UserInfo.id);
+  
+        // Update state and AsyncStorage with new user info
+        setUserInfo(updatedUserInfo || {});
+        await AsyncStorage.setItem('userInfo', JSON.stringify({ user: updatedUserInfo }));
+        
+      } catch (error) {
+        console.error('Error fetching user info:', error);
+      }
+    };
+    console.log("first: ", UserInfo);
+    fetchUserInfo();
+  }, []);
+
+  useEffect(() => {
+    console.log("포인트 변경: ", UserInfo);
+  }, [UserInfo]);
 
   // Sample data for the Point Shop
   const items = [
     { id: '1', photo: 'https://www.biz-con.co.kr/upload/images/202312/400_20231219104804672_2.jpg', itemName: '스타벅스 아이스아메리카노 T', points: 0 },
-    { id: '2', photo: 'https://www.biz-con.co.kr/upload/images/202312/400_20231219104805562_5.jpg', itemName: '스타벅스 카페 라떼', points: 300 },
+    { id: '2', photo: 'https://www.biz-con.co.kr/upload/images/202312/400_20231219104805562_5.jpg', itemName: '스타벅스 카페 라떼', points: 10 },
     { id: '3', photo: 'https://www.biz-con.co.kr/upload/images/202312/400_20231219172021306_16.jpg', itemName: '스타벅스 오늘도 달콤하게', points: 150 },
     { id: '4', photo: 'https://www.biz-con.co.kr/upload/images/202404/400_20240416135024260_10.jpg', itemName: '투썸플레이스 아이스박스', points: 400 },
     { id: '5', photo: 'https://www.biz-con.co.kr/upload/images/202404/400_20240430152421627_1.jpg', itemName: '투썸플레이스 우리 팥 빙수', points: 250 },
@@ -28,12 +54,21 @@ const PointShopScreen = () => {
     { id: '10', photo: 'https://www.biz-con.co.kr/upload/images/202301/400_20230116202725194_42.jpg', itemName: '이디야커피 아이스 카페모카', points: 290 },
   ];
 
+
+
   const handleItemPurchase = async (item) => {
-    if (userPoints >= item.points) {
+    if (UserInfo && UserInfo.points >= item.points) {
       try {
-        console.log(`Calling API to update points: userId=${userInfo.id}, points=-${item.points}`);
-        await updateUserPoints(userInfo.id, -item.points); // Deduct points from the user
-        setUserPoints(userPoints - item.points);
+        // Deduct points from the user
+        const response = await updateUserPoints(UserInfo.id, -item.points);
+  
+        // Refresh user info
+        const updatedUserInfo = await getUserInfo(UserInfo.id);
+  
+        // Update state and AsyncStorage with new user info
+        setUserInfo(updatedUserInfo || {});
+        await AsyncStorage.setItem('userInfo', JSON.stringify({ user: updatedUserInfo }));
+  
         Alert.alert('구매 성공', `${item.itemName}을 구매하셨습니다!`);
       } catch (error) {
         console.error('Error purchasing item:', error);
@@ -41,6 +76,13 @@ const PointShopScreen = () => {
       }
     } else {
       Alert.alert('포인트 부족', `포인트가 부족하여 ${item.itemName}을 구매하실 수 없습니다.`);
+      // Refresh user info
+      const updatedUserInfo = await getUserInfo(UserInfo.id);
+  
+      // Update state and AsyncStorage with new user info
+      setUserInfo(updatedUserInfo || {});
+      await AsyncStorage.setItem('userInfo', JSON.stringify({ user: updatedUserInfo }));
+  
     }
   };
 
@@ -64,7 +106,7 @@ const PointShopScreen = () => {
           <Text style={styles.headerTitle}>포인트샵</Text>
         </View>
         <View style={styles.pointsContainer}>
-          <Text style={styles.pointsText}>포인트: {userPoints}</Text>
+          <Text style={styles.pointsText}>포인트: {UserInfo ? UserInfo.points : "로딩중"}</Text>
         </View>
       </View>
       <FlatList
@@ -88,14 +130,22 @@ const PointShopScreen = () => {
               <Text>{selectedItem.itemName}을(를) 구매하시겠습니까?</Text>
               <Text>{selectedItem.points} 포인트</Text>
               <View style={styles.modalButtons}>
-                <Button title="취소" onPress={() => setSelectedItem(null)} />
-                <Button
-                  title="구매"
-                  onPress={() => {
-                    handleItemPurchase(selectedItem);
-                    setSelectedItem(null);
-                  }}
-                />
+                <TouchableOpacity
+                style={styles.modalButton}
+                onPress={() => {
+                  handleItemPurchase(selectedItem);
+                  setSelectedItem(null);
+                }}
+                  
+                >
+                  <Text style={styles.modalButtonText}>구매</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.modalButton}
+                  onPress={() => setSelectedItem(null)}
+                >
+                  <Text style={styles.modalButtonText}>취소</Text>
+                </TouchableOpacity>
               </View>
             </View>
           </View>
@@ -190,9 +240,20 @@ const styles = StyleSheet.create({
   },
   modalButtons: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'space-around',
     width: '100%',
     marginTop: 20,
+  },
+  modalButton: {
+    backgroundColor: '#2c3e50',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    marginHorizontal: 10,
+  },
+  modalButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
   },
 });
 
