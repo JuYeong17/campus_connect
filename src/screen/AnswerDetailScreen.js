@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Alert, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import moment from 'moment';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import axios from 'axios';
@@ -14,6 +15,7 @@ const AnswerDetailScreen = ({ route, navigation }) => {
   const [status, requestPermission] = ImagePicker.useMediaLibraryPermissions();
   const [userInfo, setUserInfo] = useState(null);
   const [loading, setLoading] = useState(true);
+  
 
   const fetchUserInfo = async () => {
     try {
@@ -55,23 +57,27 @@ const AnswerDetailScreen = ({ route, navigation }) => {
   }
 
   const pickImage = async () => {
-    if (!status?.granted) {
-      const permission = await requestPermission();
-      if (!permission.granted) {
-        alert('사진 접근 권한이 필요합니다!');
-        return;
-      }
+    // Request media library permission
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      alert('Sorry, we need camera roll permissions to make this work!');
+      return;
     }
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
-      allowsEditing: false,
+
+    // Allow user to pick an image
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
       quality: 1,
     });
 
+    // If the user did not cancel, set the image
     if (!result.canceled) {
-      setMedia(result.uri);
+      setMedia(result.assets[0].uri);
     }
   };
+  
 
   const handleSubmit = async () => {
     try {
@@ -112,19 +118,20 @@ const AnswerDetailScreen = ({ route, navigation }) => {
       <View style={styles.contentContainer}>
         <TextInput
           style={[styles.input, styles.contentInput]}
-          placeholder="내용"
+          placeholder="내용을 입력하세요..."
           value={content}
           onChangeText={setContent}
           multiline
         />
         <View style={styles.mediaContainer}>
           <TouchableOpacity onPress={pickImage} style={styles.mediaButton}>
-            <Text style={styles.mediaButtonText}>미디어 추가</Text>
-          </TouchableOpacity>
-          {media && <Image source={{ uri: media }} style={styles.media} />}
+            <FontAwesome name="picture-o" size={24} color="gray" />
+          </TouchableOpacity>          
         </View>
+        {media && <Image source={{ uri: media }} style={styles.media} />}
+        
         <TouchableOpacity onPress={handleSubmit} style={styles.submitButton}>
-          <Text style={styles.mediaButtonText}>제출</Text>
+          <Text style={styles.mediaButtonText}>저장</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -182,7 +189,7 @@ const styles = StyleSheet.create({
   },
   mediaButton: {
     padding: 8,
-    backgroundColor: '#2c3e50',
+    backgroundColor: '#f0f0f0',
     borderRadius: 8,
     marginRight: 8,
   },
@@ -190,8 +197,11 @@ const styles = StyleSheet.create({
     color: 'white',
   },
   media: {
-    width: 100,
-    height: 100,
+    width: '100%',
+    height: 200,
+    resizeMode: 'cover',
+    borderRadius: 8,
+    marginVertical: 8,
   },
   submitButton: {
     padding: 8,

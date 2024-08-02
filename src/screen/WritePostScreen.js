@@ -13,6 +13,7 @@ import {
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker'; // Import ImagePicker
 import { addQuestion, updateQuestion, getStoredUserInfo } from '../api';
@@ -121,20 +122,23 @@ const WritePostScreen = ({ route }) => {
           <View style={styles.contentContainer}>
             <TextInput
               style={styles.input}
-              placeholder="제목"
+              placeholder="제목을 입력하세요..."
               value={title}
               onChangeText={setTitle}
             />
             <TextInput
               style={[styles.input, styles.contentInput]}
-              placeholder="내용"
+              placeholder="내용을 입력하세요..."
               value={content}
               onChangeText={setContent}
               multiline
             />
-            <TouchableOpacity style={styles.imagePickerButton} onPress={pickImage}>
-              <Text style={styles.imagePickerButtonText}>이미지 선택</Text>
-            </TouchableOpacity>
+            <View style={styles.mediaButton}>
+              <TouchableOpacity style={styles.imagePickerButton} onPress={pickImage}>
+              <FontAwesome name="picture-o" size={24} color="gray" />
+              </TouchableOpacity>
+            </View>
+            
             {image && (
               <Image source={{ uri: image }} style={styles.imagePreview} />
             )}
@@ -210,7 +214,7 @@ const styles = StyleSheet.create({
   },
   imagePickerButton: {
     padding: 8,
-    backgroundColor: '#2c3e50',
+    backgroundColor: '#f0f0f0',
     borderRadius: 8,
     marginVertical: 8,
     alignItems: 'center',
@@ -218,6 +222,10 @@ const styles = StyleSheet.create({
   imagePickerButtonText: {
     color: 'white',
     fontSize: 15,
+  },
+  mediaButton:{
+    flexDirection: 'row',
+    alignItems: 'flex-start'
   },
   imagePreview: {
     width: '100%',
