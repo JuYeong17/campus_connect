@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Alert, StyleSheet, Image, TouchableOpacity, Switch } from 'react-native';
+import { View, Text, TextInput, Alert, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import moment from 'moment';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import axios from 'axios';
 import { getStoredUserInfo } from '../api';
-
 
 const AnswerDetailScreen = ({ route, navigation }) => {
   const { addAnswer, post } = route.params;
@@ -55,7 +54,6 @@ const AnswerDetailScreen = ({ route, navigation }) => {
     return null;
   }
 
-
   const pickImage = async () => {
     if (!status?.granted) {
       const permission = await requestPermission();
@@ -75,31 +73,31 @@ const AnswerDetailScreen = ({ route, navigation }) => {
     }
   };
 
-const handleSubmit = async () => {
-  try {
-    const newAnswer = {
-      content,
-      image_url: media ? media : null,  // Ensure `image_url` can be null
-      question_id: post.id,
-      user_id: userInfo.id,
-      answers_nickname: userInfo.nickname,
-      like_count: 0,  // Initialize like_count to 0
-      created_at: moment().toISOString(),  // Adjust date format
-      is_selected: 0,  // Use 0 for false, assuming tinyint(1)
-      selected_at: null,  // Set to null initially
-    };
+  const handleSubmit = async () => {
+    try {
+      const newAnswer = {
+        content,
+        image_url: media ? media : null,  // Ensure `image_url` can be null
+        question_id: post.id,
+        user_id: userInfo.id,
+        answers_nickname: userInfo.nickname,
+        like_count: 0,  // Initialize like_count to 0
+        created_at: moment().toISOString(),  // Adjust date format
+        is_selected: 0,  // Use 0 for false, assuming tinyint(1)
+        selected_at: null,  // Set to null initially
+      };
 
-    const response = await axios.post('http://13.125.20.36:3000/api/answers', newAnswer);
-    if (response.status === 201) {
-      Alert.alert('성공', '답변이 추가되었습니다.');
-      addAnswer(newAnswer);
-      navigation.goBack();
+      const response = await axios.post('http://13.125.20.36:3000/api/answers', newAnswer);
+      if (response.status === 201) {
+        Alert.alert('성공', '답변이 추가되었습니다.');
+        addAnswer(response.data); // 새로운 답변을 PostDetailScreen에 전달
+        navigation.goBack(); // PostDetailScreen으로 돌아가기
+      }
+    } catch (error) {
+      console.error('Error submitting answer:', error.response || error.message);
+      Alert.alert('오류', '답변 제출 중 오류가 발생했습니다.');
     }
-  } catch (error) {
-    console.error('Error submitting answer:', error.response || error.message);
-    Alert.alert('오류', '답변 제출 중 오류가 발생했습니다.');
-  }
-};
+  };
 
   return (
     <View style={styles.container}>
@@ -180,7 +178,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginVertical: 8,
-    marginBottom : 15,
+    marginBottom: 15,
   },
   mediaButton: {
     padding: 8,
@@ -195,16 +193,16 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
   },
-  submitButton : {
+  submitButton: {
     padding: 8,
     backgroundColor: '#2c3e50',
     borderRadius: 8,
     marginRight: 8,
-    alignItems : 'center'
+    alignItems: 'center',
   },
   submitButtonText: {
     color: 'white',
-    fontSize : 30,
+    fontSize: 30,
   },
 });
 

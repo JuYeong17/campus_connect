@@ -3,20 +3,25 @@ import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Alert, I
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Menu, Provider, Dialog, Portal, RadioButton } from 'react-native-paper';
-import { Button as PaperButton } from 'react-native-paper'
+import { Button as PaperButton } from 'react-native-paper';
 import axios from 'axios';
-import { getStoredUserInfo, addComment } from '../api'; // 추가된 API
+import { getStoredUserInfo } from '../api';
 import moment from 'moment';
-import 'moment/locale/ko'; 
+import 'moment/locale/ko';
+
+const formatRelativeTime = (time) => {
+  const postTime = moment(time);
+  return moment().diff(postTime, 'days') >= 1 ? postTime.format('YYYY-MM-DD') : postTime.fromNow();
+};
 
 const PostDetailScreen = () => {
   const route = useRoute();
-  const { post } = route.params;
+  const { post } = route.params; // post 데이터에서 질문 ID를 가져옵니다.
   const [likes, setLikes] = useState(post.likes);
   const [liked, setLiked] = useState(false);
   const [scrapped, setScrapped] = useState(post.scrapped);
   const [menuVisible, setMenuVisible] = useState(false);
-  const [answers, setAnswers] = useState([]);
+  const [answers, setAnswers] = useState([]); // 답변 목록을 위한 상태
   const [commenting, setCommenting] = useState(null);
   const navigation = useNavigation();
   const [reportVisible, setReportVisible] = useState(false);
@@ -32,7 +37,7 @@ const PostDetailScreen = () => {
       try {
         const response = await getStoredUserInfo();
         if (response && response.user) {
-          setUserInfo(response.user); // 사용자 정보 설정
+          setUserInfo(response.user); // Assuming response.user contains the user info
         } else {
           console.warn('No user info found or response format is incorrect.');
         }
@@ -40,10 +45,25 @@ const PostDetailScreen = () => {
         console.error('Error fetching user info:', err);
       }
     };
-
     fetchUserInfo();
-    console.log("detail: ", userInfo);
+    console.log('detail: ', userInfo);
   }, []);
+
+  useEffect(() => {
+    // Fetch answers for the specific post
+    const fetchAnswers = async () => {
+      try {
+        const response = await axios.get(`http://13.125.20.36:3000/api/answers/question/${post.id}`); // 특정 질문 ID에 맞는 답변을 가져옵니다.
+        if (response.data) {
+          setAnswers(response.data);
+        }
+      } catch (error) {
+        console.error('Error fetching answers:', error);
+      }
+    };
+
+    fetchAnswers();
+  }, [post.id]);
 
   const toggleLike = () => {
     setLikes(likes + (liked ? -1 : 1));
@@ -55,17 +75,7 @@ const PostDetailScreen = () => {
   };
 
   const addAnswer = (newAnswer) => {
-    setAnswers((prevAnswers) => [newAnswer, ...prevAnswers]);
-  };
-
-  const handleAddComment = async (answerId, content) => {
-    try {
-      const newComment = await addComment(answerId, content, userInfo.id);
-      addComment(answerId, newComment); // 상태 업데이트
-      setCommenting(null); // 댓글 입력 상태 초기화
-    } catch (error) {
-      Alert.alert('댓글 추가 오류', '댓글을 추가하는 중 오류가 발생했습니다.');
-    }
+    setAnswers((prevAnswers) => [newAnswer, ...prevAnswers]); // Add the new answer to the list
   };
 
   const addComment = (answerId, newComment) => {
@@ -87,7 +97,7 @@ const PostDetailScreen = () => {
                   ? {
                       ...comment,
                       likes: comment.hasLiked ? comment.likes - 1 : comment.likes + 1,
-                      hasLiked: !comment.hasLiked, // 좋아요 상태 토글
+                      hasLiked: !comment.hasLiked, // Toggle the like status
                     }
                   : comment
               ),
@@ -103,7 +113,7 @@ const PostDetailScreen = () => {
 
   const handleCommentClick = (answerId) => {
     setCommenting(answerId);
-    Keyboard.dismiss();
+    Keyboard.dismiss(); // Dismiss keyboard when starting to comment
   };
 
   const handleCloseCommentInput = () => {
@@ -121,24 +131,26 @@ const PostDetailScreen = () => {
   };
 
   const handleEditButtonClick = () => {
-    setMenuVisible(false);
+    setMenuVisible(false); // Close the menu
+    // Handle the edit action here
     setEditVisible(true);
   };
 
   const handleDeleteButtonClick = () => {
-    setMenuVisible(false);
+    setMenuVisible(false); // Close the menu
+    // Handle the delete action here
     setDeleteVisible(true);
   };
 
   const handleReportConfirm = () => {
     Alert.alert(
-      "게시글 신고 접수",
+      '게시글 신고 접수',
       `해당 게시물이 ${reportReason} 사유로 신고 접수되었습니다.`,
       [
         {
-          text: "확인",
-          onPress: () => navigation.goBack() // 나중에 신고 디비로 넘기기
-        }
+          text: '확인',
+          onPress: () => navigation.goBack(), // 나중에 신고 디비로 넘기기
+        },
       ],
       { cancelable: false }
     );
@@ -147,11 +159,9 @@ const PostDetailScreen = () => {
 
   const handleEditConfirm = () => {
     Alert.alert(
-      "게시글 수정",
-      "게시글 수정 기능은 현재 준비 중입니다.",
-      [
-        { text: "확인", onPress: () => console.log("Edit Confirmed") }
-      ],
+      '게시글 수정',
+      '게시글 수정 기능은 현재 준비 중입니다.',
+      [{ text: '확인', onPress: () => console.log('Edit Confirmed') }],
       { cancelable: false }
     );
     setEditVisible(false);
@@ -159,11 +169,9 @@ const PostDetailScreen = () => {
 
   const handleDeleteConfirm = () => {
     Alert.alert(
-      "게시글 삭제",
-      "게시글 삭제 기능은 현재 준비 중입니다.",
-      [
-        { text: "확인", onPress: () => console.log("Delete Confirmed") }
-      ],
+      '게시글 삭제',
+      '게시글 삭제 기능은 현재 준비 중입니다.',
+      [{ text: '확인', onPress: () => console.log('Delete Confirmed') }],
       { cancelable: false }
     );
     setDeleteVisible(false);
@@ -177,7 +185,7 @@ const PostDetailScreen = () => {
             <View style={styles.commentUserTimeContainer}>
               <Ionicons name="person-circle" size={18} color="#2c3e50" />
               <Text style={styles.commentUsername}>{comment.username}</Text>
-              <Text style={styles.commentTime}>{formatRelativeTime(comment.created_at)}</Text>
+              <Text style={styles.commentTime}>{formatRelativeTime(comment.time)}</Text>
             </View>
             <Text style={styles.commentContent}>{comment.content}</Text>
             <View style={styles.commentActions}>
@@ -192,13 +200,14 @@ const PostDetailScreen = () => {
           </View>
         ))}
       {commenting === answerId && (
-        <AddComment answerId={answerId} addComment={handleAddComment} onClose={handleCloseCommentInput} />
+        <AddComment answerId={answerId} addComment={addComment} onClose={handleCloseCommentInput} />
       )}
     </View>
   );
 
-  const sortedAnswers = [...answers].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)); // 답변 생성 시간 기준 정렬
+  const sortedAnswers = [...answers].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)); // Sort answers by creation time
 
+  // Check if the current user is the author of the post
   const isAuthor = userInfo && userInfo.id === post.user_id;
 
   return (
@@ -210,7 +219,7 @@ const PostDetailScreen = () => {
           </TouchableOpacity>
           <View style={styles.headerTextContainer}>
             <Text style={styles.headerTitle}>취업게시판</Text>
-            <Text style={styles.headerSubtitle}>{userInfo ? userInfo.univ_name : "로딩중..."}</Text>
+            <Text style={styles.headerSubtitle}>{userInfo ? userInfo.univ_name : '로딩중...'}</Text>
           </View>
           <Menu
             visible={menuVisible}
@@ -235,6 +244,7 @@ const PostDetailScreen = () => {
           ListHeaderComponent={
             <View style={styles.postContainer}>
               <Text style={styles.title}>Q. {post.title}</Text>
+
               <Text style={styles.content}>{post.content}</Text>
               <View style={styles.postUserTime}>
                 <Ionicons name="person-circle" size={18} color="#2c3e50" />
@@ -288,7 +298,7 @@ const PostDetailScreen = () => {
           <Dialog visible={reportVisible} onDismiss={handleReportDismiss}>
             <Dialog.Title>신고 사유 선택</Dialog.Title>
             <Dialog.Content>
-              <RadioButton.Group onValueChange={value => setReportReason(value)} value={reportReason}>
+              <RadioButton.Group onValueChange={(value) => setReportReason(value)} value={reportReason}>
                 <View style={styles.radioContainer}>
                   <RadioButton.Item label="광고" value="광고" />
                   <RadioButton.Item label="스팸" value="스팸" />
@@ -335,21 +345,19 @@ const PostDetailScreen = () => {
 const AddComment = ({ answerId, addComment, onClose }) => {
   const [comment, setComment] = useState('');
 
-  const handleAddComment = async () => {
-    if (comment.trim() === '') {
-      Alert.alert('댓글 추가 오류', '댓글 내용을 입력해주세요.');
-      return;
-    }
+  const handleAddComment = () => {
+    const newComment = {
+      id: Math.random().toString(),
+      content: comment,
+      username: 'user2',
+      likes: 0,
+      hasLiked: false, // Track if the comment is liked
+      time: new Date().toISOString(),
+    };
 
-    try {
-      const userId = userInfo.id; // 현재 로그인한 사용자의 ID 가져오기
-      const newComment = await addComment(answerId, comment, userId);
-      addComment(answerId, newComment); // 상태 업데이트
-      setComment('');
-      onClose(); // 입력창 닫기
-    } catch (error) {
-      Alert.alert('댓글 추가 오류', '댓글을 추가하는 중 오류가 발생했습니다.');
-    }
+    addComment(answerId, newComment);
+    setComment('');
+    onClose(); // Close the input box after adding comment
   };
 
   return (
@@ -407,7 +415,7 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: '#ffffff',
     margin: 16,
-    borderRadius: 8,    
+    borderRadius: 8,
   },
   postUserTime: {
     flexDirection: 'row',

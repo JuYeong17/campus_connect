@@ -11,7 +11,16 @@ router.get('/', (req, res) => {
     res.json(results);
   });
 });
+router.get('/question/:questionId', (req, res) => {
+  const { questionId } = req.params; // URL 파라미터에서 questionId를 가져옵니다.
 
+  connection.query('SELECT * FROM answers WHERE question_id = ?', [questionId], (error, results) => {
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+    res.json(results);
+  });
+});
 // 답변 추가
 router.post('/', (req, res) => {
   const answer = req.body;

@@ -3,6 +3,7 @@ import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { Provider } from 'react-native-paper';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import moment from 'moment';
 
 const formatRelativeTime = (time) => {
   const postTime = moment(time);
