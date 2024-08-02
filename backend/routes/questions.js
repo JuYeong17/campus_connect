@@ -97,17 +97,26 @@ router.put('/:id', (req, res) => {
   });
 });
 
-// 질문 삭제
+// Add this code in your Express router file
+
+// Delete a question by ID
 router.delete('/:id', (req, res) => {
   const { id } = req.params;
+
   connection.query('DELETE FROM questions WHERE id = ?', [id], (error, results) => {
     if (error) {
-      console.error('Error deleting question:', error); // 로그 추가
+      console.error('Error deleting question:', error); // Log the error
       return res.status(500).json({ error: error.message });
     }
-    res.json(results);
+    // Check if the question was actually deleted
+    if (results.affectedRows > 0) {
+      res.status(200).json({ message: 'Question deleted successfully' });
+    } else {
+      res.status(404).json({ message: 'Question not found' });
+    }
   });
 });
+
 
 // Get questions authored by user or questions answered by user
 router.get('/user/posts/:user_id', (req, res) => {

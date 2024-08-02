@@ -206,7 +206,7 @@ const PostDetailScreen = () => {
 
   const handleDeleteButtonClick = () => {
     setMenuVisible(false); // Close the menu
-    // Handle the delete action here
+    handleDeleteConfirm();
     setDeleteVisible(true);
   };
 
@@ -237,11 +237,36 @@ const PostDetailScreen = () => {
     });
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     Alert.alert(
       '게시글 삭제',
-      '게시글 삭제 기능은 현재 준비 중입니다.',
-      [{ text: '확인', onPress: () => console.log('Delete Confirmed') }],
+      '게시글을 정말 삭제하시겠습니까?',
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '확인',
+          onPress: async () => {
+            try {
+              // Send DELETE request to the server
+              const response = await axios.delete(`http://13.125.20.36:3000/api/questions/${post.id}`);
+              
+              if (response.status === 200) {
+                Alert.alert('삭제 완료', '게시글이 성공적으로 삭제되었습니다.', [
+                  {
+                    text: '확인',
+                    onPress: () => navigation.goBack(),
+                  },
+                ]);
+              } else {
+                Alert.alert('삭제 실패', response.data.message);
+              }
+            } catch (error) {
+              console.error('Error deleting post:', error);
+              Alert.alert('Error', '게시글을 삭제하는 동안 오류가 발생했습니다.');
+            }
+          },
+        },
+      ],
       { cancelable: false }
     );
     setDeleteVisible(false);
