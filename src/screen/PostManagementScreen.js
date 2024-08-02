@@ -20,6 +20,7 @@ const PostManagementScreen = () => {
 
   const { user_id } = route.params;  // Get user_id from route params
 
+  
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -38,7 +39,6 @@ const PostManagementScreen = () => {
     fetchPosts();
   }, [user_id]);
 
-  
 
   const handleDeletePost = (postId) => {
     Alert.alert(

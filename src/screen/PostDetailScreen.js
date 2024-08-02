@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Alert, Image, Keyboard } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, toString, Alert, Image, Keyboard } from 'react-native';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Menu, Provider, Dialog, Portal, RadioButton } from 'react-native-paper';
@@ -31,6 +31,8 @@ const PostDetailScreen = () => {
   const [deleteVisible, setDeleteVisible] = useState(false);
   const [userInfo, setUserInfo] = useState(null);
   const [selectedAnswerId, setSelectedAnswerId] = useState(null); // To track the selected answer
+  const [answerMenuVisible, setAnswerMenuVisible] = useState(false);
+  const [currentAnswer, setCurrentAnswer] = useState(null);
 
   moment.locale('ko');
 
@@ -146,6 +148,51 @@ const PostDetailScreen = () => {
     setAnswers((prevAnswers) => [newAnswer, ...prevAnswers]); // Add the new answer to the list
   };
 
+
+  
+  
+  const handleDeleteAnswer = (answerId) => {
+    setAnswerMenuVisible(false);
+    Alert.alert(
+      '답변 삭제',
+      '이 답변을 정말 삭제하시겠습니까?',
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '확인',
+          onPress: async () => {
+            try {
+              await axios.delete(`http://13.125.20.36:3000/api/answers/${answerId}`);
+              // Remove the deleted answer from the state
+              setAnswers(prevAnswers => prevAnswers.filter(answer => answer.id !== answerId));
+              Alert.alert('삭제 완료', '답변이 삭제되었습니다.');
+            } catch (error) {
+              console.error('Error deleting answer:', error);
+              Alert.alert('Error', '답변을 삭제하는 동안 오류가 발생했습니다.');
+            }
+          },
+        },
+      ],
+      { cancelable: false }
+    );
+  };
+  
+  const handleReportAnswer = (answerId) => {
+    setAnswerMenuVisible(false);
+    // Implement reporting functionality here
+    Alert.alert('답변 신고', '신고 기능은 아직 구현되지 않았습니다.');
+  };
+
+  const handleMenuPress = (answerId) => {
+    setCurrentAnswer(answerId);
+    setAnswerMenuVisible(true);
+  };
+  
+  const handleMenuDismiss = () => {
+    setAnswerMenuVisible(false);
+    setCurrentAnswer(null);
+  };
+
   const addComment = (answerId, newComment) => {
     setAnswers((prevAnswers) =>
       prevAnswers.map((answer) =>
@@ -237,6 +284,25 @@ const PostDetailScreen = () => {
     });
   };
 
+  const handleEditAnswer = (answerId) => {
+    setAnswerMenuVisible(false);
+    const answerToEdit = answers.find(answer => answer.id === answerId);
+    if (answerToEdit) {
+      navigation.navigate('AnswerDetailScreen', {
+        post,
+        isEditing: true,
+        answer: answerToEdit,
+        onUpdateAnswer: (updatedAnswer) => {
+          setAnswers(prevAnswers => prevAnswers.map(answer =>
+            answer.id === answerId ? updatedAnswer : answer
+          ));
+        }
+      });
+    } else {
+      console.error('Answer not found');
+    }
+  };
+
   const handleDeleteConfirm = async () => {
     Alert.alert(
       '게시글 삭제',
@@ -304,6 +370,7 @@ const PostDetailScreen = () => {
 
   // Check if the current user is the author of the post
   const isAuthor = userInfo && userInfo.id === post.user_id;
+  const isAnswerAuthor = (answer) => userInfo && userInfo.id === answer.user_id;
 
   return (
     <Provider>
@@ -370,12 +437,38 @@ const PostDetailScreen = () => {
           renderItem={({ item }) => (
             <View style={styles.answerContainer}>
               <View style={styles.answerUserTimeContainer}>
-                <Ionicons name="person-circle" size={18} color="#2c3e50" />
-                <Text style={styles.answerUsername}>{item.answers_nickname}</Text>
-                <Text style={styles.answerTime}>{formatRelativeTime(item.created_at)}</Text>
+                <View style={styles.userTimeContainer}>
+                  <Ionicons name="person-circle" size={18} color="#2c3e50" />
+                  <Text style={styles.answerUsername}>{item.answers_nickname}</Text>
+                  <Text style={styles.answerTime}>{formatRelativeTime(item.created_at)}</Text>
+                </View>
+                <Menu
+                    visible={answerMenuVisible && currentAnswer === item.id}
+                    onDismiss={handleMenuDismiss}
+                    anchor={
+                      <TouchableOpacity onPress={() => handleMenuPress(item.id)} style={styles.moreButton}>
+                        <Ionicons name="ellipsis-vertical" size={20} color="black" />
+                      </TouchableOpacity>
+                    }
+                  >
+                    {isAnswerAuthor(item) ? (
+                    <>
+                      <Menu.Item onPress={() => handleEditAnswer(item.id)} title="수정하기" />
+                      <Menu.Item onPress={() => handleDeleteAnswer(item.id)} title="삭제하기" />
+                    </>
+                  ) : (
+                    <Menu.Item onPress={() => handleReportAnswer(item.id)} title="신고하기" />
+                  )}
+                </Menu>
+
               </View>
               <Text style={styles.answerContent}>A. {item.content}</Text>
-              {item.media && <Image source={{ uri: item.media }} style={styles.answerMedia} />}
+              {item.image_url && <Image 
+              source={{ uri: item.image_url }} 
+              style={styles.answerMedia} 
+              resizeMode='cover'
+              />}
+                          
               <View style={styles.answerFooter}>
                 <TouchableOpacity onPress={() => handleCommentClick(item.id)} style={styles.commentButton}>
                   <Ionicons name="chatbubble-outline" size={20} color="black" />
@@ -389,6 +482,7 @@ const PostDetailScreen = () => {
                 {item.selected && (
                   <Text style={styles.selectedText}>채택된 답변</Text>
                 )}
+                
               </View>
               {renderComments(item.comments, item.id)}
             </View>
@@ -422,28 +516,6 @@ const PostDetailScreen = () => {
             </Dialog.Actions>
           </Dialog>
         </Portal>
-        {/* <Portal>
-          <Dialog visible={editVisible} onDismiss={() => setEditVisible(false)}>
-            <Dialog.Title>게시글 수정</Dialog.Title>
-            <Dialog.Content>
-              <Text>게시글이 수정되었습니다.</Text>
-            </Dialog.Content>
-            <Dialog.Actions>
-              <PaperButton onPress={() => setEditVisible(false)}>확인</PaperButton>
-            </Dialog.Actions>
-          </Dialog>
-        </Portal>
-        <Portal>
-          <Dialog visible={deleteVisible} onDismiss={() => setDeleteVisible(false)}>
-            <Dialog.Title>게시글 삭제</Dialog.Title>
-            <Dialog.Content>
-              <Text>게시글이 삭제되었습니다.</Text>
-            </Dialog.Content>
-            <Dialog.Actions>
-              <PaperButton onPress={() => setDeleteVisible(false)}>확인</PaperButton>
-            </Dialog.Actions>
-          </Dialog>
-        </Portal> */}
       </View>
     </Provider>
   );
@@ -575,6 +647,7 @@ const styles = StyleSheet.create({
   },
   answerUserTimeContainer: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
   },
   answerTitle: {
     fontSize: 16,
@@ -593,6 +666,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 10,
+  },
+  userTimeContainer:{
+    flexDirection: 'row',
+
+  },
+  moreButton: {
+    marginLeft: 10,
   },
   answerUsername: {
     fontSize: 12,

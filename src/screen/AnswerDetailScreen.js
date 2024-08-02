@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Alert, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, Alert, StyleSheet,toString, Image, TouchableOpacity } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -9,32 +9,41 @@ import axios from 'axios';
 import { getStoredUserInfo } from '../api';
 
 const AnswerDetailScreen = ({ route, navigation }) => {
-  const { addAnswer, post } = route.params;
-  const [content, setContent] = useState('');
-  const [media, setMedia] = useState(null);
+  const { addAnswer, post, answer, onUpdateAnswer, isEditing : initialEditing } = route.params;
+  const [content, setContent] = useState(answer?.content || '');
+  const [media, setMedia] = useState(answer?.image_url || null);
   const [status, requestPermission] = ImagePicker.useMediaLibraryPermissions();
   const [userInfo, setUserInfo] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(initialEditing);
   
 
-  const fetchUserInfo = async () => {
-    try {
-      const user = await getStoredUserInfo();
-      if (user && user.user) {
-        setUserInfo(user.user);
-      } else {
-        console.warn('User info not found.');
-      }
-    } catch (error) {
-      console.error('Error fetching user info:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const user = await getStoredUserInfo();
+        if (user?.user) {
+          setUserInfo(user.user);
+        } else {
+          console.warn('User info not found.');
+        }
+      } catch (error) {
+        console.error('Error fetching user info:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchUserInfo();
   }, []);
+
+  useEffect(() => {
+    if (answer) {
+      setIsEditing(true);
+      setContent(answer.content || '');
+      setMedia(answer.image_url || null);
+    }
+  }, [answer]);
 
   if (loading) {
     // Show loading state or spinner if needed
@@ -81,6 +90,16 @@ const AnswerDetailScreen = ({ route, navigation }) => {
 
   const handleSubmit = async () => {
     try {
+
+      // Ensure the content and question_id are provided
+    if (!content.trim()) {
+      Alert.alert('Validation Error', 'Content cannot be empty.');
+      return;
+    }
+    if (!post || !post.id) {
+      Alert.alert('Validation Error', 'Post ID is required.');
+      return;
+    }
       const newAnswer = {
         content,
         image_url: media ? media : null,  // Ensure `image_url` can be null
@@ -88,20 +107,31 @@ const AnswerDetailScreen = ({ route, navigation }) => {
         user_id: userInfo.id,
         answers_nickname: userInfo.nickname,
         like_count: 0,  // Initialize like_count to 0
-        created_at: moment().toISOString(),  // Adjust date format
+        created_at: (isEditing ? answer.created_at : moment().toISOString()),  // Adjust date format
         is_selected: 0,  // Use 0 for false, assuming tinyint(1)
         selected_at: null,  // Set to null initially
       };
 
-      const response = await axios.post('http://13.125.20.36:3000/api/answers', newAnswer);
-      if (response.status === 201) {
-        Alert.alert('성공', '답변이 추가되었습니다.');
-        addAnswer(response.data); // 새로운 답변을 PostDetailScreen에 전달
-        navigation.goBack(); // PostDetailScreen으로 돌아가기
+      let response;
+      if (isEditing && answer) {
+        response = await axios.put(`http://13.125.20.36:3000/api/answers/${answer.id}`, newAnswer);
+        if (response.status === 200) {
+          Alert.alert('성공', '답변이 수정되었습니다.');
+          onUpdateAnswer(response.data);
+        }
+      } else {
+        response = await axios.post('http://13.125.20.36:3000/api/answers', newAnswer);
+        if (response.status === 201) {
+          Alert.alert('성공', '답변이 추가되었습니다.');
+          addAnswer(response.data);
+        }
       }
+      navigation.goBack();
     } catch (error) {
+      console.log("fuck", response.data);
       console.error('Error submitting answer:', error.response || error.message);
       Alert.alert('오류', '답변 제출 중 오류가 발생했습니다.');
+      
     }
   };
 
@@ -112,7 +142,7 @@ const AnswerDetailScreen = ({ route, navigation }) => {
           <Ionicons name="arrow-back" size={30} color="white" />
         </TouchableOpacity>
         <View style={styles.headerTextContainer}>
-          <Text style={styles.headerTitle}>답변 작성</Text>
+          <Text style={styles.headerTitle}>{isEditing ? '답변 수정' : '답변 작성'}</Text>
         </View>
       </View>
       <View style={styles.contentContainer}>
@@ -131,7 +161,7 @@ const AnswerDetailScreen = ({ route, navigation }) => {
         {media && <Image source={{ uri: media }} style={styles.media} />}
         
         <TouchableOpacity onPress={handleSubmit} style={styles.submitButton}>
-          <Text style={styles.mediaButtonText}>저장</Text>
+          <Text style={styles.submitButtonText}>{isEditing ? '수정 저장' : '저장'}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -212,7 +242,7 @@ const styles = StyleSheet.create({
   },
   submitButtonText: {
     color: 'white',
-    fontSize: 30,
+    fontSize: 20,
   },
 });
 
