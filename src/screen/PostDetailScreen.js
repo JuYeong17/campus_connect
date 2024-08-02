@@ -341,6 +341,13 @@ const PostDetailScreen = () => {
               <Text style={styles.title}>Q. {post.title}</Text>
 
               <Text style={styles.content}>{post.content}</Text>
+              {post.image_url && (
+          <Image
+            source={{ uri: post.image_url }}
+            style={styles.postImage}
+            resizeMode="cover"
+          />
+        )}
               <View style={styles.postUserTime}>
                 <Ionicons name="person-circle" size={18} color="#2c3e50" />
                 <Text style={styles.username}>{post.username}</Text>
@@ -535,6 +542,11 @@ const styles = StyleSheet.create({
   content: {
     fontSize: 16,
     marginVertical: 8,
+  },
+  postImage: {
+    width: '100%',
+    height: 200,
+    marginVertical: 10,
   },
   time: {
     fontSize: 12,

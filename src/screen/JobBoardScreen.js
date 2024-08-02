@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { Provider } from 'react-native-paper';
 import moment from 'moment';
@@ -157,12 +157,23 @@ const JobBoardScreen = () => {
         navigation.navigate('PostDetailScreen', { post: item, userInfo })
       }
     >
-      <Text style={styles.title}>Q. {item.title}</Text>
-      <Text style={styles.content}>{item.content}</Text>
-      <View style={styles.row}>
-        <Ionicons name="person-circle" size={18} color="#2c3e50" />
-        <Text style={styles.username}>{item.username}</Text>
-        <Text style={styles.time}>{formatRelativeTime(item.created_at)}</Text>
+      <View style={styles.postContent}>
+        <View style={styles.postTextContainer}>
+          <Text style={styles.title}>Q. {item.title}</Text>
+          <Text style={styles.content}>{item.content}</Text>
+          <View style={styles.row}>
+            <Ionicons name="person-circle" size={18} color="#2c3e50" />
+            <Text style={styles.username}>{item.username}</Text>
+            <Text style={styles.time}>{formatRelativeTime(item.created_at)}</Text>
+          </View>
+        </View>
+        {item.image_url && (
+          <Image
+            source={{ uri: item.image_url }}
+            style={styles.postImage}
+            resizeMode="cover"
+          />
+        )}
       </View>
       <View style={styles.separator} />
       <View style={styles.interactions}>
@@ -293,6 +304,20 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     padding: 15,
     marginVertical: 8,
+  },
+  postContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  postImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 5,
+    marginLeft: 10,
+  },
+  postTextContainer: {
+    flex: 1, // Ensure the text container uses remaining space
   },
   title: {
     fontSize: 18,

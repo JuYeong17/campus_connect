@@ -10,9 +10,11 @@ import {
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import * as ImagePicker from 'expo-image-picker'; // Import ImagePicker
 import { addQuestion, updateQuestion, getStoredUserInfo } from '../api';
 
 const WritePostScreen = ({ route }) => {
@@ -22,6 +24,7 @@ const WritePostScreen = ({ route }) => {
   const [anonymous, setAnonymous] = useState(false);
   const [error, setError] = useState('');
   const [userInfo, setUserInfo] = useState(null);
+  const [image, setImage] = useState(null); // State to store selected image
   const navigation = useNavigation();
 
   useEffect(() => {
@@ -36,6 +39,29 @@ const WritePostScreen = ({ route }) => {
 
     fetchUserInfo();
   }, []);
+
+  // Function to pick image
+  const pickImage = async () => {
+    // Request media library permission
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      alert('Sorry, we need camera roll permissions to make this work!');
+      return;
+    }
+
+    // Allow user to pick an image
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    // If the user did not cancel, set the image
+    if (!result.canceled) {
+      setImage(result.assets[0].uri);
+    }
+  };
 
   const handleSave = async () => {
     if (!userInfo) {
@@ -52,6 +78,7 @@ const WritePostScreen = ({ route }) => {
       scrapped: false,
       liked: false,
       created_at: moment().utc().format(),
+      image_url: image, // Add the image URL to the post data
     };
 
     console.log('New Post Data:', newPost);
@@ -105,6 +132,12 @@ const WritePostScreen = ({ route }) => {
               onChangeText={setContent}
               multiline
             />
+            <TouchableOpacity style={styles.imagePickerButton} onPress={pickImage}>
+              <Text style={styles.imagePickerButtonText}>이미지 선택</Text>
+            </TouchableOpacity>
+            {image && (
+              <Image source={{ uri: image }} style={styles.imagePreview} />
+            )}
             <View style={styles.switchContainer}>
               <Text>익명으로 게시</Text>
               <Switch value={anonymous} onValueChange={setAnonymous} />
@@ -174,6 +207,24 @@ const styles = StyleSheet.create({
   contentInput: {
     height: 150,
     textAlignVertical: 'top',
+  },
+  imagePickerButton: {
+    padding: 8,
+    backgroundColor: '#2c3e50',
+    borderRadius: 8,
+    marginVertical: 8,
+    alignItems: 'center',
+  },
+  imagePickerButtonText: {
+    color: 'white',
+    fontSize: 15,
+  },
+  imagePreview: {
+    width: '100%',
+    height: 200,
+    resizeMode: 'cover',
+    borderRadius: 8,
+    marginVertical: 8,
   },
   switchContainer: {
     flexDirection: 'row',
