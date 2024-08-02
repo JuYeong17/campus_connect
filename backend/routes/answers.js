@@ -72,22 +72,29 @@ router.delete('/:id', (req, res) => {
   });
 });
 
-// 답변 채택
-router.post('/:id/select', (req, res) => {
+// routes/answers.js
+router.post('/select/:id', (req, res) => {
   const { id } = req.params;
-  connection.query('UPDATE answers SET is_selected = TRUE, selected_at = NOW() WHERE id = ?', [id], (error, results) => {
+  const { userId } = req.body; // ID of the user who is marking the answer
+
+  connection.query('UPDATE answers SET selected = 1 WHERE id = ?', [id], (error, results) => {
     if (error) {
       return res.status(500).json({ error: error.message });
     }
-    if (results.affectedRows === 0) {
-      return res.status(404).json({ error: 'Answer not found' });
-    }
-    // 답변을 채택한 유저에게 포인트를 추가합니다.
-    connection.query('UPDATE users SET points = points + 10 WHERE id = (SELECT user_id FROM answers WHERE id = ?)', [id], (error, results) => {
+
+    // Update points for the user who answered
+    connection.query('SELECT user_id FROM answers WHERE id = ?', [id], (error, result) => {
       if (error) {
         return res.status(500).json({ error: error.message });
       }
-      res.json({ success: true });
+
+      const answerUserId = result[0].user_id;
+      connection.query('UPDATE users SET points = points + 10 WHERE id = ?', [answerUserId], (error) => {
+        if (error) {
+          return res.status(500).json({ error: error.message });
+        }
+        res.json({ success: true });
+      });
     });
   });
 });

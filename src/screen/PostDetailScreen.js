@@ -29,6 +29,7 @@ const PostDetailScreen = () => {
   const [editVisible, setEditVisible] = useState(false);
   const [deleteVisible, setDeleteVisible] = useState(false);
   const [userInfo, setUserInfo] = useState(null);
+  const [selectedAnswerId, setSelectedAnswerId] = useState(null); // To track the selected answer
 
   moment.locale('ko');
 
@@ -64,6 +65,27 @@ const PostDetailScreen = () => {
 
     fetchAnswers();
   }, [post.id]);
+
+  const handleSelectAnswer = async (answerId) => {
+    try {
+      // Mark the answer as selected
+      const response = await axios.post(`http://13.125.20.36:3000/api/answers/select/${answerId}`, { userId: userInfo.id });
+      if (response.data.success) {
+        // Update the selected answer in the state
+        setSelectedAnswerId(answerId);
+        // Notify the user that the answer was selected
+        Alert.alert('Answer Selected', 'The answer has been marked as selected and the user has been awarded points.');
+        // Refresh the answers list to show the updated state
+        const updatedAnswers = answers.map(answer =>
+          answer.id === answerId ? { ...answer, selected: true } : answer
+        );
+        setAnswers(updatedAnswers);
+      }
+    } catch (error) {
+      console.error('Error selecting answer:', error);
+      Alert.alert('Error', 'An error occurred while selecting the answer.');
+    }
+  };
 
   const toggleLike = () => {
     setLikes(likes + (liked ? -1 : 1));
@@ -279,9 +301,14 @@ const PostDetailScreen = () => {
                   <Ionicons name="chatbubble-outline" size={20} color="black" />
                   <Text style={styles.commentCount}>{item.comments ? item.comments.length : 0}</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => handleSelectAnswer(item.id)} style={styles.iconWithText}>
-                  <Text>채택</Text>
-                </TouchableOpacity>
+                {isAuthor && !item.selected && (
+                  <TouchableOpacity onPress={() => handleSelectAnswer(item.id)} style={styles.iconWithText}>
+                    <Text>채택</Text>
+                  </TouchableOpacity>
+                )}
+                {item.selected && (
+                  <Text style={styles.selectedText}>채택된 답변</Text>
+                )}
               </View>
               {renderComments(item.comments, item.id)}
             </View>
