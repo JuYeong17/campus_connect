@@ -12,8 +12,7 @@ const HomeScreen = ({ navigation, route }) => {
 
   useEffect(() => {
     if (route.params?.isLoggedIn !== undefined) {
-      setLocalIsLoggedIn(route.params.isLoggedIn);
-      setLocalSelectedUniversity(route.params.selectedUniversity || "");      
+      setLocalIsLoggedIn(route.params.isLoggedIn);  
     }
   }, [route.params]);
 
@@ -21,6 +20,7 @@ const HomeScreen = ({ navigation, route }) => {
     axios.get('http://13.125.20.36:3000/api/university')
       .then(response => {
         setUniversities(response.data);
+        console.log(universities);
       })
       .catch(error => {
         console.error('Error fetching universities:', error);
@@ -35,8 +35,10 @@ const HomeScreen = ({ navigation, route }) => {
           const storedUserInfo = await AsyncStorage.getItem('userInfo');
           if (storedUserInfo) {
             const parsedUserInfo = JSON.parse(storedUserInfo);
-            setUserInfo(parsedUserInfo);
-            console.log('Fetched user info:', parsedUserInfo); // Debug log
+            setUserInfo(parsedUserInfo.user || {});
+            
+            console.log('Fetched user info:', userInfo); // Debug log
+            
           } else {
             console.log('No user info found in AsyncStorage.');
           }
@@ -57,7 +59,7 @@ const HomeScreen = ({ navigation, route }) => {
     try {
       await AsyncStorage.removeItem('userInfo'); // Remove user info from AsyncStorage
       setUserInfo(null); // Clear the userInfo state
-      setLocalIsLoggedIn(false); // Set login status to false
+      setLocalIsLoggedIn(false); // Set login status to false      
     } catch (error) {
       console.error('Error logging out:', error);
     }
@@ -75,7 +77,7 @@ const HomeScreen = ({ navigation, route }) => {
       </View>
 
       {localIsLoggedIn ? (
-        <Text style={styles.universityText}>{localSelectedUniversity}</Text>
+        <Text style={styles.universityText}>{userInfo ? userInfo.univ_name : "로딩중..."}</Text>
       ) : (
         <View style={styles.pickerContainer}>
           <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.pickerButton}>
@@ -114,7 +116,7 @@ const HomeScreen = ({ navigation, route }) => {
 
       <TouchableOpacity
         style={styles.button}
-        onPress={() => navigation.navigate("JobBoard")}
+        onPress={() => navigation.navigate("JobBoard", { selectedUniversity: localSelectedUniversity })}
       >
         <Text style={styles.buttonText}>취업게시판</Text>
       </TouchableOpacity>
@@ -149,23 +151,6 @@ const HomeScreen = ({ navigation, route }) => {
           </>
         )}
       </View>
-
-      {/* <TouchableOpacity
-        style={[
-          styles.logoutButton,
-          {
-            position: "absolute",
-            top: 40,
-            right: 20,
-            backgroundColor: localIsLoggedIn ? "#f39c12" : "#2980b9",
-          },
-        ]}
-        onPress={() => setLocalIsLoggedIn(!localIsLoggedIn)}
-      >
-        <Text style={styles.loginandoutText}>
-          {localIsLoggedIn ? "로그아웃" : "로그인"}
-        </Text>
-      </TouchableOpacity> */}
     </View>
   );
 };

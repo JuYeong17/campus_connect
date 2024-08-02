@@ -1,21 +1,20 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { Provider } from 'react-native-paper';
 import moment from 'moment';
 import 'moment/locale/ko';
-import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import { getQuestionsByCategory, toggleLike, toggleScrap, getStoredUserInfo } from '../api';
-
 
 const JobBoardScreen = () => {
   const [questions, setQuestions] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredQuestions, setFilteredQuestions] = useState([]);
   const navigation = useNavigation();
-  const route = useRoute();
   const [userInfo, setUserInfo] = useState(null);
-  //const { userInfo } = route.params;
+  const route = useRoute();
+  const { selectedUniversity } = route.params;
 
   const fetchQuestions = async () => {
     try {
@@ -27,6 +26,7 @@ const JobBoardScreen = () => {
 
       setQuestions(sortedQuestions);
       setFilteredQuestions(sortedQuestions);
+      console.log(selectedUniversity);
     } catch (error) {
       console.error('Error fetching questions:', error);
     }
@@ -40,9 +40,16 @@ const JobBoardScreen = () => {
           await fetchQuestions();
           const response = await getStoredUserInfo();
           console.log('Fetched user info:', response); // Full response for debugging
-          setUserInfo(response.user || {}); // Extract user object or set empty object if `user` is not available
+
+          // Check if response is not null and has a user property
+          if (response && response.user) {
+            setUserInfo(response.user); // Extract user object
+          } else {
+            setUserInfo(null); // Set userInfo to null if response is invalid
+          }
         } catch (error) {
           console.error('Error fetching user info:', error);
+          setUserInfo(null); // Ensure userInfo is set to null on error
         }
       };
       fetchData();
@@ -51,7 +58,6 @@ const JobBoardScreen = () => {
 
   useEffect(() => {
     console.log('Updated userInfo:', userInfo);
-    
   }, [userInfo]);
 
   useEffect(() => {
@@ -105,6 +111,43 @@ const JobBoardScreen = () => {
     return moment().diff(questionTime, 'days') >= 1
       ? questionTime.format('YYYY-MM-DD')
       : questionTime.fromNow();
+  };
+
+  const handleWritePost = () => {
+    if (!userInfo) {
+      Alert.alert(
+        '로그인 필요',
+        '로그인해야 글을 작성할 수 있습니다.',
+        [
+          { text: '취소', style: 'cancel' },
+          { text: '로그인', onPress: () => navigation.navigate('Login') },
+        ],
+        { cancelable: false }
+      );
+      return;
+    }
+
+    navigation.navigate('WritePostScreen', {
+      category_id: 1,
+      onAddPost: handleAddPost, // Pass the callback
+    });
+  };
+
+  const handleNavigateToMyPage = () => {
+    if (!userInfo) {
+      Alert.alert(
+        '로그인 필요',
+        '로그인해야 마이페이지를 볼 수 있습니다.',
+        [
+          { text: '취소', style: 'cancel' },
+          { text: '로그인', onPress: () => navigation.navigate('Login') },
+        ],
+        { cancelable: false }
+      );
+      return;
+    }
+
+    navigation.navigate('MyPage', { userInfo });
   };
 
   const renderItem = ({ item }) => (
@@ -162,7 +205,7 @@ const JobBoardScreen = () => {
           <View style={styles.headerTextContainer}>
             <Text style={styles.headerTitle}>취업게시판</Text>
             <Text style={styles.headerSubtitle}>
-              {userInfo ? userInfo.univ_name : '로딩중...'}
+              {userInfo ? userInfo.univ_name : selectedUniversity}
             </Text>
           </View>
           <View style={styles.headerIcons}>
@@ -172,9 +215,7 @@ const JobBoardScreen = () => {
             >
               <Ionicons name="search" size={24} color="white" />
             </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => navigation.navigate('MyPage', { userInfo })}
-            >
+            <TouchableOpacity onPress={handleNavigateToMyPage}>
               <Ionicons name="person" size={24} color="white" />
             </TouchableOpacity>
           </View>
@@ -193,12 +234,7 @@ const JobBoardScreen = () => {
         />
         <TouchableOpacity
           style={styles.writeButton}
-          onPress={() =>
-            navigation.navigate('WritePostScreen', {
-              category_id: 1,
-              onAddPost: handleAddPost, // Pass the callback
-            })
-          }
+          onPress={handleWritePost}
         >
           <Ionicons name="pencil" size={24} color="white" />
         </TouchableOpacity>
