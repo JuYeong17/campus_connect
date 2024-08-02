@@ -50,13 +50,33 @@ const PostDetailScreen = () => {
     console.log('detail: ', userInfo);
   }, []);
 
+  // useEffect(() => {
+  //   // Fetch answers for the specific post
+  //   const fetchAnswers = async () => {
+  //     try {
+  //       const response = await axios.get(`http://13.125.20.36:3000/api/answers/question/${post.id}`); // 특정 질문 ID에 맞는 답변을 가져옵니다.
+  //       if (response.data) {
+  //         setAnswers(response.data);
+  //       }
+  //     } catch (error) {
+  //       console.error('Error fetching answers:', error);
+  //     }
+  //   };
+
+  //   fetchAnswers();
+  // }, [post.id]);
+
   useEffect(() => {
-    // Fetch answers for the specific post
     const fetchAnswers = async () => {
       try {
-        const response = await axios.get(`http://13.125.20.36:3000/api/answers/question/${post.id}`); // 특정 질문 ID에 맞는 답변을 가져옵니다.
+        const response = await axios.get(`http://13.125.20.36:3000/api/answers/question/${post.id}`);
         if (response.data) {
-          setAnswers(response.data);
+          // Mark selected answer
+          const updatedAnswers = response.data.map(answer => ({
+            ...answer,
+            selected: answer.is_selected === 1,
+          }));
+          setAnswers(updatedAnswers);
         }
       } catch (error) {
         console.error('Error fetching answers:', error);
@@ -74,10 +94,10 @@ const PostDetailScreen = () => {
         // Update the selected answer in the state
         setSelectedAnswerId(answerId);
         // Notify the user that the answer was selected
-        Alert.alert('Answer Selected', 'The answer has been marked as selected and the user has been awarded points.');
+        Alert.alert('답변 채택', '이 답변이 채택되어 답변글 작성자에게 포인트가 지급되었습니다.');
         // Refresh the answers list to show the updated state
         const updatedAnswers = answers.map(answer =>
-          answer.id === answerId ? { ...answer, selected: true } : answer
+          answer.id === answerId ? { ...answer, selected: true } : { ...answer, selected: false }
         );
         setAnswers(updatedAnswers);
       }
@@ -315,7 +335,7 @@ const PostDetailScreen = () => {
           )}
           keyExtractor={(item) => item.id.toString()}
         />
-        {commenting === null && (
+        {commenting === null && !isAuthor && (
           <TouchableOpacity style={styles.floatingButton} onPress={navigateToAnswerDetail}>
             <Ionicons name="add" size={30} color="white" />
           </TouchableOpacity>
@@ -506,7 +526,7 @@ const styles = StyleSheet.create({
   },
   answerFooter: {
     flexDirection: 'row',
-    justifyContent: 'flex-start',
+    justifyContent: 'space-between',
     marginTop: 10,
   },
   answerUsername: {
@@ -587,6 +607,9 @@ const styles = StyleSheet.create({
   radioContainer: {
     flexDirection: 'column',
   },
+  selectedText:{
+    color: '#ccc',
+  }
 });
 
 export default PostDetailScreen;
