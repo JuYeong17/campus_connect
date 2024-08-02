@@ -6,22 +6,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const HomeScreen = ({ navigation, route }) => {
   const [localIsLoggedIn, setLocalIsLoggedIn] = useState(false);
   const [localSelectedUniversity, setLocalSelectedUniversity] = useState("");
-  const [userInfo, setUserInfo] = useState({});
+  const [userInfo, setUserInfo] = useState(null);
   const [universities, setUniversities] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
     if (route.params?.isLoggedIn !== undefined) {
       setLocalIsLoggedIn(route.params.isLoggedIn);
-      setLocalSelectedUniversity(route.params.selectedUniversity || "");
-      // setUserInfo({
-      //   user_id: route.params.user_id || "",
-      //   selectedUniversity: route.params.selectedUniversity || "",
-      //   nickname: route.params.nickname || "",
-      //   email: route.params.email || "",
-      //   points : route.params.points || "",
-      //   password : route.params.password || "",
-      // });
+      setLocalSelectedUniversity(route.params.selectedUniversity || "");      
     }
   }, [route.params]);
 
@@ -48,6 +40,9 @@ const HomeScreen = ({ navigation, route }) => {
           } else {
             console.log('No user info found in AsyncStorage.');
           }
+        } else {
+          setUserInfo(null); // Set userInfo to null when not logged in
+          console.log("if logout: ", userInfo);
         }
       } catch (error) {
         console.error('Error retrieving user info:', error);

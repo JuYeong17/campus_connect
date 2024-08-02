@@ -198,6 +198,8 @@ const PostDetailScreen = () => {
 
   const sortedAnswers = [...answers].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)); // Sort answers by creation time
 
+  // Check if the current user is the author of the post
+  const isAuthor = userInfo && userInfo.id === post.user_id;
 
   return (
     <Provider>
@@ -219,9 +221,14 @@ const PostDetailScreen = () => {
               </TouchableOpacity>
             }
           >
-            <Menu.Item onPress={handleEditButtonClick} title="수정하기" />
-            <Menu.Item onPress={handleDeleteButtonClick} title="삭제하기" />
-            <Menu.Item onPress={handleReportButtonClick} title="신고하기" />
+            {isAuthor ? (
+              <>
+                <Menu.Item onPress={handleEditButtonClick} title="수정하기" />
+                <Menu.Item onPress={handleDeleteButtonClick} title="삭제하기" />
+              </>
+            ) : (
+              <Menu.Item onPress={handleReportButtonClick} title="신고하기" />
+            )}
           </Menu>
         </View>
         <FlatList
