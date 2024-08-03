@@ -1,26 +1,54 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Provider } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
+import axios from 'axios';
+import { getStoredUserInfo } from '../api'; // Import getStoredUserInfo function
 import moment from 'moment';
 
+// Function to format the time to be shown in UI
 const formatRelativeTime = (time) => {
   const postTime = moment(time);
   return moment().diff(postTime, 'days') >= 1 ? postTime.format('YYYY-MM-DD') : postTime.fromNow();
 };
 
 const ScrapManagementScreen = () => {
+  // UseState for handling scrapped items
   const [scrappedItems, setScrappedItems] = useState([]);
+  // UseState for showing ActivityIndicator while loading
+  const [loading, setLoading] = useState(true);
+  // UseState for storing user information
+  const [userInfo, setUserInfo] = useState(null);
   const navigation = useNavigation();
 
   useEffect(() => {
     const fetchScrappedItems = async () => {
-      const data = [
-        { id: '1', title: '취업 준비 다들 어떻게 하셨나요???', content: '막막합니다 ㅜㅜ', time: '2024-07-22T10:00:00Z', likes: 1, type: 'post' },
-        
-      ];
-      setScrappedItems(data);
+      try {
+        // Fetch stored user info
+        const storedUserInfo = await getStoredUserInfo();
+
+        if (storedUserInfo && storedUserInfo.user) {
+          const userId = storedUserInfo.user.id; // Fetch user_id from user info
+          setUserInfo(storedUserInfo.user); // Store userInfo in state
+
+          console.log('Fetching scrapped items for user_id:', userId); // Debug log
+
+          // Fetch scrapped items for this user
+          const response = await axios.get(
+            `http://13.125.20.36:3000/api/scraps/user/${userId}`
+          );
+
+          setScrappedItems(response.data);
+        } else {
+          Alert.alert('오류', '로그인 정보가 없습니다.');
+        }
+      } catch (error) {
+        console.error('Error fetching scrapped items:', error);
+        Alert.alert('오류', '스크랩 항목을 가져오는 중 오류가 발생했습니다.');
+      } finally {
+        setLoading(false); // Set loading to false after data is fetched
+      }
     };
 
     fetchScrappedItems();
@@ -34,18 +62,41 @@ const ScrapManagementScreen = () => {
       },
       {
         text: '확인',
-        onPress: () => {
-          setScrappedItems(scrappedItems.filter(item => item.id !== itemId));
+        onPress: async () => {
+          try {
+            if (!userInfo) {
+              // Check if userInfo exists before proceeding
+              Alert.alert('오류', '사용자 정보가 없습니다.');
+              return;
+            }
+
+            // Post request to toggle the scrap
+            await axios.post('http://13.125.20.36:3000/api/scraps/toggle', {
+              question_id: itemId,
+              user_id: userInfo.id, // Use userInfo.id here
+              scrapped: true,
+            });
+
+            setScrappedItems(scrappedItems.filter((item) => item.id !== itemId));
+            Alert.alert('스크랩 취소됨', '스크랩이 취소되었습니다.');
+          } catch (error) {
+            console.error('Error unsaving item:', error);
+            Alert.alert('오류', '스크랩 취소 중 오류가 발생했습니다.');
+          }
         },
       },
     ]);
   };
 
+  // Rendering each item of the flat list
   const renderItem = ({ item }) => (
     <View style={styles.itemContainer}>
       <View style={styles.itemHeader}>
         <Text style={styles.itemTitle}>{item.title}</Text>
-        <TouchableOpacity onPress={() => handleUnsaveItem(item.id)} style={styles.unsaveButton}>
+        <TouchableOpacity
+          onPress={() => handleUnsaveItem(item.id)}
+          style={styles.unsaveButton}
+        >
           <Ionicons name="bookmark-outline" size={20} color="blue" />
         </TouchableOpacity>
       </View>
@@ -59,17 +110,24 @@ const ScrapManagementScreen = () => {
     <Provider>
       <View style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backIcon} onPress={() => navigation.goBack()}>
+          <TouchableOpacity
+            style={styles.backIcon}
+            onPress={() => navigation.goBack()}
+          >
             <Ionicons name="arrow-back" size={30} color="white" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>스크랩 관리</Text>
         </View>
-        <FlatList
-          data={scrappedItems}
-          renderItem={renderItem}
-          keyExtractor={item => item.id}
-          contentContainerStyle={styles.listContainer}
-        />
+        {loading ? ( // Show loading indicator while fetching data
+          <ActivityIndicator size="large" color="#2c3e50" />
+        ) : (
+          <FlatList
+            data={scrappedItems}
+            renderItem={renderItem}
+            keyExtractor={(item) => item.id.toString()}
+            contentContainerStyle={styles.listContainer}
+          />
+        )}
       </View>
     </Provider>
   );
@@ -92,7 +150,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 16,
     top: 45,
-    zIndex : 1,
+    zIndex: 1,
   },
   headerTitle: {
     fontSize: 20,

@@ -2,6 +2,26 @@ const express = require('express');
 const router = express.Router();
 const connection = require('../config/db');
 
+router.get('/user/:user_id', (req, res) => {
+  const { user_id } = req.params;
+
+  // Join the scraps and questions tables to get scrapped questions
+  const query = `
+    SELECT q.id, q.title, q.content, q.likes, q.created_at as time
+    FROM scraps s
+    JOIN questions q ON s.question_id = q.id
+    WHERE s.user_id = ?
+  `;
+
+  connection.query(query, [user_id], (error, results) => {
+    if (error) {
+      console.error('Error fetching scrapped items:', error);
+      return res.status(500).json({ error: 'Error fetching scrapped items' });
+    }
+    res.json(results);
+  });
+});
+
 // 스크랩 추가 또는 삭제 (토글 기능)
 router.post('/toggle', (req, res) => {
   const { question_id, user_id, scrapped } = req.body;

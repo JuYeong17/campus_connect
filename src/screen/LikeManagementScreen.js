@@ -7,14 +7,19 @@ import axios from 'axios';
 import { getStoredUserInfo } from '../api'; // Import getStoredUserInfo to fetch user info
 import moment from 'moment';
 
+// Function to format the time to be shown in UI
 const formatRelativeTime = (time) => {
   const postTime = moment(time);
   return moment().diff(postTime, 'days') >= 1 ? postTime.format('YYYY-MM-DD') : postTime.fromNow();
 };
 
 const LikeManagementScreen = () => {
+  // UseState for handling liked items
   const [likedItems, setLikedItems] = useState([]);
-  const [loading, setLoading] = useState(true); // Add loading state for UX
+  // UseState for showing ActivityIndicator while loading
+  const [loading, setLoading] = useState(true);
+  // UseState for storing user information
+  const [userInfo, setUserInfo] = useState(null);
   const navigation = useNavigation();
 
   useEffect(() => {
@@ -25,6 +30,7 @@ const LikeManagementScreen = () => {
 
         if (storedUserInfo && storedUserInfo.user) {
           const userId = storedUserInfo.user.id; // Fetch user_id from user info
+          setUserInfo(storedUserInfo.user); // Store userInfo in state
 
           console.log('Fetching liked items for user_id:', userId); // Debug log
 
@@ -58,9 +64,16 @@ const LikeManagementScreen = () => {
         text: '확인',
         onPress: async () => {
           try {
+            if (!userInfo) {
+              // Check if userInfo exists before proceeding
+              Alert.alert('오류', '사용자 정보가 없습니다.');
+              return;
+            }
+
+            // Post request to toggle the like
             await axios.post('http://13.125.20.36:3000/api/likes/toggle', {
               question_id: itemId,
-              user_id: userInfo.id,
+              user_id: userInfo.id, // Use userInfo.id here
               liked: true,
             });
 
@@ -75,6 +88,7 @@ const LikeManagementScreen = () => {
     ]);
   };
 
+  // Rendering each item of the flat list
   const renderItem = ({ item }) => (
     <View style={styles.itemContainer}>
       <View style={styles.itemHeader}>
