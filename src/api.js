@@ -9,6 +9,8 @@ export const loginUser = async (user_id, password) => {
   try {
     const response = await api.post('/auth/login', { user_id, password });
     if (response.data) {
+      // userInfo의 구조를 확인
+      console.log('Login successful, user info:', response.data);
       await AsyncStorage.setItem('userInfo', JSON.stringify(response.data));
       return response.data;
     } else {
@@ -24,8 +26,11 @@ export const getStoredUserInfo = async () => {
   try {
     const userInfo = await AsyncStorage.getItem('userInfo');
     if (userInfo) {
-      return JSON.parse(userInfo);
+      const parsedUserInfo = JSON.parse(userInfo);
+      console.log('Parsed user info:', parsedUserInfo); // 로그 추가
+      return parsedUserInfo;
     } else {
+      console.warn('No user info found in AsyncStorage');
       return null;
     }
   } catch (error) {
@@ -132,7 +137,7 @@ export const getQuestionStatus = async (questionId, userId) => {
 // 좋아요 토글
 export const toggleLike = async (questionId, userId, liked) => {
   try {
-    const response = await api.post(`/likes/toggle`, {
+    const response = await api.post('/likes/toggle', {
       question_id: questionId,
       user_id: userId,
       liked,
@@ -209,6 +214,15 @@ export const addComment = async (answerId, content, userId) => {
     return response.data;
   } catch (error) {
     console.error('Error adding comment:', error);
+    throw error;
+  }
+};
+export const getUserPosts = async (nickname) => {
+  try {
+    const response = await api.get(`/questions/user/posts/${nickname}`);
+    return response.data;
+  } catch (error) {
+    console.error('닉네임으로 사용자 게시글 가져오기 오류:', error);
     throw error;
   }
 };

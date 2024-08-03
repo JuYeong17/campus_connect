@@ -16,10 +16,29 @@ router.get('/', (req, res) => {
 // 특정 user_id를 가진 모든 질문 가져오기
 router.get('/user/:user_id', (req, res) => {
   const { user_id } = req.params;
-  console.log(user_id);
-  connection.query('SELECT * FROM questions WHERE user_id = ?', [user_id], (error, results) => {
+  console.log(`Fetching posts for user_id: ${user_id}`); // 로그로 확인
+
+  // user_id로 질문 가져오기
+  const query = 'SELECT * FROM questions WHERE user_id = ?';
+  connection.query(query, [user_id], (error, results) => {
     if (error) {
-      console.error('Error fetching questions by user_id:', error); // 로그 추가
+      console.error('Error fetching questions by user_id:', error);
+      return res.status(500).json({ error: error.message });
+    }
+    res.json(results);
+  });
+});
+
+router.get('/user/posts/:nickname', (req, res) => {
+  const { nickname } = req.params;
+  
+  const query = `
+    SELECT * FROM questions WHERE username = ?
+  `;
+  
+  connection.query(query, [nickname], (error, results) => {
+    if (error) {
+      console.error('닉네임으로 게시글 가져오기 오류:', error);
       return res.status(500).json({ error: error.message });
     }
     res.json(results);
