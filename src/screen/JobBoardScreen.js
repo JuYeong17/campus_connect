@@ -70,36 +70,48 @@ const JobBoardScreen = () => {
     }
   }, [searchQuery, questions]);
 
+  // 공감 토글 함수
   const handleToggleLike = async (id, liked) => {
     try {
-      await toggleLike(id, liked);
+      if (!userInfo) {
+        Alert.alert('로그인 필요', '로그인 후 공감할 수 있습니다.');
+        return;
+      }
+      
+      const result = await toggleLike(id, userInfo.id, liked);
       const updatedQuestions = questions.map(question =>
-        question.id === id ? { ...question, likes: question.likes + (liked ? -1 : 1), liked: !question.liked } : question
+        question.id === id ? { ...question, likes: question.likes + (result.liked ? 1 : -1), liked: result.liked } : question
       );
       setQuestions(updatedQuestions);
       setFilteredQuestions(updatedQuestions);
     } catch (error) {
-      console.error('Error toggling like:', error);
+      console.error('좋아요 토글 중 오류:', error.message || error); // 오류 메시지 출력
     }
   };
 
+  // 스크랩 토글 함수
   const handleToggleScrap = async (id, scrapped) => {
     try {
-      await toggleScrap(id, scrapped);
+      if (!userInfo) {
+        Alert.alert('로그인 필요', '로그인 후 스크랩할 수 있습니다.');
+        return;
+      }
+
+      const result = await toggleScrap(id, userInfo.id, scrapped);
       const updatedQuestions = questions.map(question =>
-        question.id === id ? { ...question, scrapped: !question.scrapped } : question
+        question.id === id ? { ...question, scrapped: result.scrapped } : question
       );
       setQuestions(updatedQuestions);
       setFilteredQuestions(updatedQuestions);
     } catch (error) {
-      console.error('Error toggling scrap:', error);
+      console.error('스크랩 토글 중 오류:', error.message || error); // 오류 메시지 출력
     }
   };
 
   const handleAddPost = (newPost) => {
     if (!newPost.id) {
-      console.error('New post is missing an id:', newPost);
-      return; // Exit if the new post doesn't have an ID
+      console.error('새로운 포스트에 ID가 없습니다:', newPost);
+      return; // 새로운 포스트에 ID가 없으면 종료
     }
     const updatedQuestions = [newPost, ...questions];
     setQuestions(updatedQuestions);
@@ -129,7 +141,7 @@ const JobBoardScreen = () => {
 
     navigation.navigate('WritePostScreen', {
       category_id: 1,
-      onAddPost: handleAddPost, // Pass the callback
+      onAddPost: handleAddPost, // 콜백 전달
     });
   };
 

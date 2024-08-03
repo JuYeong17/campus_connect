@@ -123,58 +123,44 @@ export const updateQuestion = async (id, question) => {
   }
 };
 
-// api.js 파일에 toggleLike와 toggleScrap 함수 추가
-
 export const toggleLike = async (questionId, userId, liked) => {
   try {
-    const response = await fetch('http://localhost:3000/api/likes/toggle', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        question_id: questionId,
-        user_id: userId,
-        liked,
-      }),
+    const response = await api.post('/likes/toggle', {
+      question_id: questionId,
+      user_id: userId,
+      liked,
     });
 
-    if (!response.ok) {
-      throw new Error('좋아요 토글 실패');
+    if (!response.data.success) {
+      throw new Error(response.data.message || '좋아요 토글 실패'); // 서버에서 보낸 오류 메시지를 사용
     }
 
-    return response.json();
+    return response.data; // API 응답 데이터 반환
   } catch (error) {
-    console.error('좋아요 API 호출 중 오류:', error);
+    console.error('좋아요 API 호출 중 오류:', error.message || error);
     throw error;
   }
 };
 
+// 스크랩 토글 API (스크랩/스크랩 취소)
 export const toggleScrap = async (questionId, userId, scrapped) => {
   try {
-    const response = await fetch('http://localhost:3000/api/scraps/toggle', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        question_id: questionId,
-        user_id: userId,
-        scrapped,
-      }),
+    const response = await api.post('/scraps/toggle', {
+      question_id: questionId,
+      user_id: userId,
+      scrapped,
     });
 
-    if (!response.ok) {
-      throw new Error('스크랩 토글 실패');
+    if (!response.data.success) {
+      throw new Error(response.data.message || '스크랩 토글 실패'); // 서버에서 보낸 오류 메시지를 사용
     }
 
-    return response.json();
+    return response.data; // API 응답 데이터 반환
   } catch (error) {
-    console.error('스크랩 API 호출 중 오류:', error);
+    console.error('스크랩 API 호출 중 오류:', error.message || error);
     throw error;
   }
 };
-
 
 export const getQuestionsByCategory = async (category_id) => {
   try {
