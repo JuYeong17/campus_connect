@@ -125,9 +125,12 @@ const PostDetailScreen = () => {
 
   const handleSelectAnswer = async (answerId) => {
     try {
-      const response = await axios.post(`http://13.125.20.36:3000/api/answers/select/${answerId}`, {
+      console.log(`Selecting answer with ID: ${answerId}, user ID: ${userInfo.id}`); // 디버깅용 로그
+  
+      const response = await axios.post(`http://13.125.20.36:3000/api/answers/${answerId}/select`, {
         userId: userInfo.id,
       });
+  
       if (response.data.success) {
         setSelectedAnswerId(answerId);
         Alert.alert('답변 채택', '이 답변이 채택되어 답변글 작성자에게 포인트가 지급되었습니다.');
@@ -137,11 +140,11 @@ const PostDetailScreen = () => {
         setAnswers(updatedAnswers);
       }
     } catch (error) {
-      console.error('답변 선택 오류:', error);
+      console.error('답변 선택 오류:', error); // 에러 메시지 로그
       Alert.alert('오류', '답변 선택 중 오류가 발생했습니다.');
     }
   };
-
+  
   // 좋아요 토글 핸들러
   const handleToggleLike = async () => {
     try {

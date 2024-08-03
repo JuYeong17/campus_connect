@@ -1,8 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, Image, StyleSheet, Dimensions, TouchableOpacity, Alert, Modal, Button } from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  Image,
+  StyleSheet,
+  Dimensions,
+  TouchableOpacity,
+  Alert,
+  Modal,
+  Button,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { updateUserPoints, getStoredUserInfo,getUserInfo } from '../api'; // Assume this is the correct path to your API functions
+import { updateUserPoints, getStoredUserInfo, getUserInfo } from '../api'; // Assume this is the correct path to your API functions
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Dimensions for responsive design
@@ -17,72 +28,122 @@ const PointShopScreen = () => {
   useEffect(() => {
     const fetchUserInfo = async () => {
       try {
-        
         const info = await getStoredUserInfo();
-        setUserInfo(info.user || {});
+        setUserInfo(info.user || null); // Ensure it is set to null if no user found
 
-        // Refresh user info
-        const updatedUserInfo = await getUserInfo(UserInfo.id);
-  
-        // Update state and AsyncStorage with new user info
-        setUserInfo(updatedUserInfo || {});
-        await AsyncStorage.setItem('userInfo', JSON.stringify({ user: updatedUserInfo }));
-        
+        // Refresh user info only if UserInfo is valid
+        if (info.user && info.user.id) {
+          const updatedUserInfo = await getUserInfo(info.user.id);
+
+          // Update state and AsyncStorage with new user info
+          setUserInfo(updatedUserInfo || {});
+          await AsyncStorage.setItem('userInfo', JSON.stringify({ user: updatedUserInfo }));
+        }
       } catch (error) {
         console.error('Error fetching user info:', error);
       }
     };
-    console.log("first: ", UserInfo);
+    console.log('first: ', UserInfo);
     fetchUserInfo();
   }, []);
 
   useEffect(() => {
-    console.log("포인트 변경: ", UserInfo);
+    console.log('포인트 변경: ', UserInfo);
   }, [UserInfo]);
 
   // Sample data for the Point Shop
   const items = [
-    { id: '1', photo: 'https://www.biz-con.co.kr/upload/images/202312/400_20231219104804672_2.jpg', itemName: '스타벅스 아이스아메리카노 T', points: 0 },
-    { id: '2', photo: 'https://www.biz-con.co.kr/upload/images/202312/400_20231219104805562_5.jpg', itemName: '스타벅스 카페 라떼', points: 10 },
-    { id: '3', photo: 'https://www.biz-con.co.kr/upload/images/202312/400_20231219172021306_16.jpg', itemName: '스타벅스 오늘도 달콤하게', points: 150 },
-    { id: '4', photo: 'https://www.biz-con.co.kr/upload/images/202404/400_20240416135024260_10.jpg', itemName: '투썸플레이스 아이스박스', points: 400 },
-    { id: '5', photo: 'https://www.biz-con.co.kr/upload/images/202404/400_20240430152421627_1.jpg', itemName: '투썸플레이스 우리 팥 빙수', points: 250 },
-    { id: '6', photo: 'https://www.biz-con.co.kr/upload/images/202208/400_20220810102057047_%EB%A9%94%EA%B0%80%20%ED%97%A4%EC%9D%B4%EC%A6%90%EB%84%9B%20%EC%95%84%EB%A9%94%EB%A6%AC%EC%B9%B4%EB%85%B8%EC%95%84%EC%9D%B4%EC%8A%A4.jpg', itemName: '메가커피 아이스 아메리카노', points: 350 },
-    { id: '7', photo: 'https://www.biz-con.co.kr/upload/images/202208/400_20220810101941366_%EB%A9%94%EA%B0%80%EC%98%A4%EB%A0%88%EC%98%A4%EC%B4%88%EC%BD%94%EB%9D%BC%EB%96%BC.jpg', itemName: '메가커피 오레오초코라떼', points: 180 },
-    { id: '8', photo: 'https://www.biz-con.co.kr/upload/images/202208/400_20220810102142990_%EB%A9%94%EA%B0%80%20%EC%82%AC%EA%B3%BC%EC%9C%A0%EC%9E%90%EC%B0%A8.jpg', itemName: '메가커피 사과유자차', points: 270 },
-    { id: '9', photo: 'https://www.biz-con.co.kr/upload/images/202301/400_20230116202536785_37.jpg', itemName: '이디야커피 아이스 아메리카노', points: 320 },
-    { id: '10', photo: 'https://www.biz-con.co.kr/upload/images/202301/400_20230116202725194_42.jpg', itemName: '이디야커피 아이스 카페모카', points: 290 },
+    {
+      id: '1',
+      photo: 'https://www.biz-con.co.kr/upload/images/202312/400_20231219104804672_2.jpg',
+      itemName: '스타벅스 아이스아메리카노 T',
+      points: 20,
+    },
+    {
+      id: '2',
+      photo: 'https://www.biz-con.co.kr/upload/images/202312/400_20231219104805562_5.jpg',
+      itemName: '스타벅스 카페 라떼',
+      points: 30,
+    },
+    {
+      id: '3',
+      photo: 'https://www.biz-con.co.kr/upload/images/202312/400_20231219172021306_16.jpg',
+      itemName: '스타벅스 오늘도 달콤하게',
+      points: 150,
+    },
+    {
+      id: '4',
+      photo: 'https://www.biz-con.co.kr/upload/images/202404/400_20240416135024260_10.jpg',
+      itemName: '투썸플레이스 아이스박스',
+      points: 400,
+    },
+    {
+      id: '5',
+      photo: 'https://www.biz-con.co.kr/upload/images/202404/400_20240430152421627_1.jpg',
+      itemName: '투썸플레이스 우리 팥 빙수',
+      points: 250,
+    },
+    {
+      id: '6',
+      photo: 'https://www.biz-con.co.kr/upload/images/202208/400_20220810102057047_%EB%A9%94%EA%B0%80%20%ED%97%A4%EC%9D%B4%EC%A6%90%EB%84%9B%20%EC%95%84%EB%A9%94%EB%A6%AC%EC%B9%B4%EB%85%B8%EC%95%84%EC%9D%B4%EC%8A%A4.jpg',
+      itemName: '메가커피 아이스 아메리카노',
+      points: 350,
+    },
+    {
+      id: '7',
+      photo: 'https://www.biz-con.co.kr/upload/images/202208/400_20220810101941366_%EB%A9%94%EA%B0%80%EC%98%A4%EB%A0%88%EC%98%A4%EC%B4%88%EC%BD%94%EB%9D%BC%EB%96%BC.jpg',
+      itemName: '메가커피 오레오초코라떼',
+      points: 180,
+    },
+    {
+      id: '8',
+      photo: 'https://www.biz-con.co.kr/upload/images/202208/400_20220810102142990_%EB%A9%94%EA%B0%80%20%EC%82%AC%EA%B3%BC%EC%9C%A0%EC%9E%90%EC%B0%A8.jpg',
+      itemName: '메가커피 사과유자차',
+      points: 270,
+    },
+    {
+      id: '9',
+      photo: 'https://www.biz-con.co.kr/upload/images/202301/400_20230116202536785_37.jpg',
+      itemName: '이디야커피 아이스 아메리카노',
+      points: 320,
+    },
+    {
+      id: '10',
+      photo: 'https://www.biz-con.co.kr/upload/images/202301/400_20230116202725194_42.jpg',
+      itemName: '이디야커피 아이스 카페모카',
+      points: 290,
+    },
   ];
-
-
 
   const handleItemPurchase = async (item) => {
     if (UserInfo && UserInfo.points >= item.points) {
       try {
         // Deduct points from the user
         const response = await updateUserPoints(UserInfo.id, -item.points);
-  
+
         // Refresh user info
         const updatedUserInfo = await getUserInfo(UserInfo.id);
-  
+
         // Update state and AsyncStorage with new user info
         setUserInfo(updatedUserInfo || {});
         await AsyncStorage.setItem('userInfo', JSON.stringify({ user: updatedUserInfo }));
-  
+
         Alert.alert('구매 성공', `${item.itemName}을 구매하셨습니다!`);
       } catch (error) {
         console.error('Error purchasing item:', error);
         Alert.alert('구매 실패', '구매 과정에서 오류가 발생하였습니다.');
       }
     } else {
-      Alert.alert('포인트 부족', `포인트가 부족하여 ${item.itemName}을 구매하실 수 없습니다.`);
+      Alert.alert(
+        '포인트 부족',
+        `포인트가 부족하여 ${item.itemName}을 구매하실 수 없습니다.`
+      );
       // Refresh user info
       const updatedUserInfo = await getUserInfo(UserInfo.id);
-  
+
       // Update state and AsyncStorage with new user info
       setUserInfo(updatedUserInfo || {});
       await AsyncStorage.setItem('userInfo', JSON.stringify({ user: updatedUserInfo }));
-  
     }
   };
 
@@ -106,7 +167,9 @@ const PointShopScreen = () => {
           <Text style={styles.headerTitle}>포인트샵</Text>
         </View>
         <View style={styles.pointsContainer}>
-          <Text style={styles.pointsText}>포인트: {UserInfo ? UserInfo.points : "로딩중"}</Text>
+          <Text style={styles.pointsText}>
+            포인트: {UserInfo ? UserInfo.points : '로딩중'}
+          </Text>
         </View>
       </View>
       <FlatList
@@ -131,12 +194,11 @@ const PointShopScreen = () => {
               <Text>{selectedItem.points} 포인트</Text>
               <View style={styles.modalButtons}>
                 <TouchableOpacity
-                style={styles.modalButton}
-                onPress={() => {
-                  handleItemPurchase(selectedItem);
-                  setSelectedItem(null);
-                }}
-                  
+                  style={styles.modalButton}
+                  onPress={() => {
+                    handleItemPurchase(selectedItem);
+                    setSelectedItem(null);
+                  }}
                 >
                   <Text style={styles.modalButtonText}>구매</Text>
                 </TouchableOpacity>

@@ -11,12 +11,14 @@ const HomeScreen = ({ navigation, route }) => {
   const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
-    if (route.params?.isLoggedIn !== undefined) {
-      setLocalIsLoggedIn(route.params.isLoggedIn);  
+    // Safely access route.params with a fallback to handle undefined scenarios
+    if (route?.params?.isLoggedIn !== undefined) {
+      setLocalIsLoggedIn(route.params.isLoggedIn);
     }
-  }, [route.params]);
+  }, [route?.params]); // Adding optional chaining to prevent errors
 
   useEffect(() => {
+    // Fetch university list
     axios.get('http://13.125.20.36:3000/api/university')
       .then(response => {
         setUniversities(response.data);
@@ -37,7 +39,7 @@ const HomeScreen = ({ navigation, route }) => {
             const parsedUserInfo = JSON.parse(storedUserInfo);
             setUserInfo(parsedUserInfo.user || {});
             
-            console.log('Fetched user info:', userInfo); // Debug log
+            console.log('Fetched user info:', parsedUserInfo.user); // Debug log
             
           } else {
             console.log('No user info found in AsyncStorage.');
@@ -65,6 +67,7 @@ const HomeScreen = ({ navigation, route }) => {
     }
   };
 
+  // Handle university selection
   const selectUniversity = (univName) => {
     setLocalSelectedUniversity(univName);
     setModalVisible(false);
@@ -76,6 +79,7 @@ const HomeScreen = ({ navigation, route }) => {
         <Image source={require("./cc.png")} style={styles.logo} />
       </View>
 
+      {/* Display the selected university or a prompt to select one */}
       {localIsLoggedIn ? (
         <Text style={styles.universityText}>{userInfo ? userInfo.univ_name : "로딩중..."}</Text>
       ) : (
@@ -114,9 +118,10 @@ const HomeScreen = ({ navigation, route }) => {
         </View>
       </Modal>
 
+      {/* Navigate to different screens with appropriate params */}
       <TouchableOpacity
         style={styles.button}
-        onPress={() => navigation.navigate("JobBoard", { selectedUniversity: localSelectedUniversity })}
+        onPress={() => navigation.navigate("JobBoard", { selectedUniversity: localSelectedUniversity || "선택된 대학 없음" })}
       >
         <Text style={styles.buttonText}>취업게시판</Text>
       </TouchableOpacity>
@@ -131,7 +136,7 @@ const HomeScreen = ({ navigation, route }) => {
       <View style={styles.authTextContainer}>
         {localIsLoggedIn ? (
           <>
-            <TouchableOpacity onPress={() => navigation.navigate("MyPage", {userInfo})}>
+            <TouchableOpacity onPress={() => navigation.navigate("MyPage", { userInfo })}>
               <Text style={styles.authText}>마이페이지</Text>
             </TouchableOpacity>
             <Text style={styles.separator}> | </Text>
