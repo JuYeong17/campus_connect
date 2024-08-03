@@ -1,5 +1,3 @@
-// PostManagementScreen.js
-
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -11,63 +9,68 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import { getUserPosts, getStoredUserInfo } from '../api'; // 필요한 API 함수 import
+import { useNavigation, useRoute } from '@react-navigation/native';
+import axios from 'axios';
+import { getStoredUserInfo } from '../api';
 
 const PostManagementScreen = () => {
   const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true); // 로딩 상태 추가
   const navigation = useNavigation();
+  const route = useRoute();
+
+  const { user_id } = route.params; // Get user_id from route params
 
   useEffect(() => {
-    const fetchUserPosts = async () => {
+    const fetchPosts = async () => {
       try {
-        // 저장된 사용자 정보 가져오기
-        const userInfo = await getStoredUserInfo();
-    
-        if (userInfo) {
-          console.log('Fetching posts for user nickname:', userInfo.nickname); // 로그로 확인
-          // 사용자 닉네임으로 게시글 가져오기
-          const userPosts = await getUserPosts(userInfo.nickname);
-          setPosts(userPosts);
-        } else {
-          Alert.alert('오류', '로그인 정보가 없습니다.');
-        }
+        const response = await axios.get(
+          'http://13.125.20.36:3000/api/questions',
+          {
+            params: {
+              user_id: user_id, // Pass user_id as a query parameter
+            },
+          }
+        );
+        setPosts(response.data);
       } catch (error) {
-        console.error('사용자 게시글 가져오기 오류:', error);
-        Alert.alert('오류', '게시글을 가져오는 중 오류가 발생했습니다.');
-      } finally {
-        setLoading(false); // 로딩 완료
+        console.error('Error fetching posts:', error);
       }
     };
 
-    fetchUserPosts();
-  }, []);
+    fetchPosts();
+  }, [user_id]);
 
   const handleDeletePost = (postId) => {
     Alert.alert(
-      "삭제 확인",
-      "정말로 이 게시글을 삭제하시겠습니까?",
+      '삭제 확인',
+      '정말로 이 게시글을 삭제하시겠습니까?',
       [
         {
-          text: "취소",
-          style: "cancel",
+          text: '취소',
+          style: 'cancel',
         },
         {
-          text: "삭제",
+          text: '삭제',
           onPress: async () => {
             try {
-              await axios.delete(`http://13.125.20.36:3000/api/questions/${postId}`);
-              const updatedPosts = posts.filter(post => post.id !== postId);
+              // 백틱(`) 사용하여 템플릿 리터럴로 URL 생성
+              await axios.delete(
+                `http://13.125.20.36:3000/api/questions/${postId}`
+              );
+
+              // 게시글 삭제 후 상태 업데이트
+              const updatedPosts = posts.filter((post) => post.id !== postId);
               setPosts(updatedPosts);
-              Alert.alert("삭제 완료", "게시글이 삭제되었습니다.");
+
+              Alert.alert('삭제 완료', '게시글이 삭제되었습니다.');
             } catch (error) {
-              console.error('게시글 삭제 오류:', error);
-              Alert.alert("오류", "게시글 삭제에 실패했습니다.");
+              console.error('Error deleting post:', error);
+              Alert.alert('오류', '게시글 삭제에 실패했습니다.');
             }
-          }
-        }
-      ]
+          },
+        },
+      ],
+      { cancelable: false }
     );
   };
 
@@ -79,7 +82,10 @@ const PostManagementScreen = () => {
         <Ionicons name="person-circle" size={18} color="#2c3e50" />
         <Text style={styles.username}>{item.username}</Text>
       </View>
-      <TouchableOpacity onPress={() => handleDeletePost(item.id)} style={styles.deleteButton}>
+      <TouchableOpacity
+        onPress={() => handleDeletePost(item.id)}
+        style={styles.deleteButton}
+      >
         <Text style={styles.deleteButtonText}>삭제</Text>
       </TouchableOpacity>
     </View>
@@ -88,24 +94,26 @@ const PostManagementScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backIcon} onPress={() => navigation.goBack()}>
+        <TouchableOpacity
+          style={styles.backIcon}
+          onPress={() => navigation.goBack()}
+        >
           <Ionicons name="arrow-back" size={30} color="white" />
         </TouchableOpacity>
         <View style={styles.headerTextContainer}>
           <Text style={styles.headerTitle}>게시글 관리</Text>
         </View>
       </View>
-      {loading ? ( // 로딩 상태에 따라 로딩 인디케이터 표시
-        <ActivityIndicator size="large" color="#2c3e50" />
-      ) : (
-        <FlatList
-          data={posts}
-          renderItem={renderItem}
-          keyExtractor={item => item.id.toString()}
-          contentContainerStyle={styles.listContainer}
-        />
-      )}
-      <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate('WritePostScreen')}>
+      <FlatList
+        data={posts}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={styles.listContainer}
+      />
+      <TouchableOpacity
+        style={styles.addButton}
+        onPress={() => navigation.navigate('WritePostScreen')}
+      >
         <Ionicons name="pencil" size={24} color="white" />
       </TouchableOpacity>
     </View>

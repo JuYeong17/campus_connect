@@ -22,20 +22,14 @@ export const loginUser = async (user_id, password) => {
   }
 };
 
+
 export const getStoredUserInfo = async () => {
   try {
     const userInfo = await AsyncStorage.getItem('userInfo');
-    if (userInfo) {
-      const parsedUserInfo = JSON.parse(userInfo);
-      console.log('Parsed user info:', parsedUserInfo); // 로그 추가
-      return parsedUserInfo;
-    } else {
-      console.warn('No user info found in AsyncStorage');
-      return null;
-    }
+    return userInfo ? JSON.parse(userInfo) : null;
   } catch (error) {
     console.error('Error retrieving user info:', error);
-    throw error;
+    return null;
   }
 };
 
@@ -222,7 +216,7 @@ export const getUserPosts = async (nickname) => {
     const response = await api.get(`/questions/user/posts/${nickname}`);
     return response.data;
   } catch (error) {
-    console.error('닉네임으로 사용자 게시글 가져오기 오류:', error);
+    console.error('Error fetching user posts:', error);
     throw error;
   }
 };

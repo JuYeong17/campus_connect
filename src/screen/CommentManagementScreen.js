@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { Provider } from 'react-native-paper';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
+import axios from 'axios';
 import moment from 'moment';
+import { getStoredUserInfo } from '../api'; // Assuming you have this function to get user info
 
 const formatRelativeTime = (time) => {
   const postTime = moment(time);
@@ -12,18 +14,37 @@ const formatRelativeTime = (time) => {
 
 const CommentManagementScreen = () => {
   const [comments, setComments] = useState([]);
+  const [userInfo, setUserInfo] = useState(null);
   const navigation = useNavigation();
-  const route = useRoute();
-//   const { userInfo } = route.params;
 
   useEffect(() => {
-    // Fetch the comments from an API or database
-    const initialComments = [
-      { id: '1', content: '저도 막막하네요ㅠㅠ', username: 'minsu', time: '2024-07-22T10:00:00Z', likes: 1, hasLiked: false },
+    const fetchUserInfo = async () => {
+      try {
+        const storedUserInfo = await getStoredUserInfo(); // Fetch stored user info
+        if (storedUserInfo && storedUserInfo.user) {
+          setUserInfo(storedUserInfo.user); // Set user info
+          fetchComments(storedUserInfo.user.id); // Fetch comments for this user
+        } else {
+          Alert.alert('오류', '로그인 정보가 없습니다.');
+        }
+      } catch (error) {
+        console.error('Error fetching user info:', error);
+        Alert.alert('오류', '사용자 정보를 가져오는 중 오류가 발생했습니다.');
+      }
+    };
 
-    ];
-    setComments(initialComments);
+    fetchUserInfo();
   }, []);
+
+  const fetchComments = async (userId) => {
+    try {
+      const response = await axios.get(`http://13.125.20.36:3000/api/answers/user/${userId}`);
+      setComments(response.data);
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+      Alert.alert('오류', '댓글을 가져오는 중 오류가 발생했습니다.');
+    }
+  };
 
   const handleDeleteComment = (commentId) => {
     Alert.alert('댓글 삭제', '정말로 이 댓글을 삭제하시겠습니까?', [
@@ -33,16 +54,25 @@ const CommentManagementScreen = () => {
       },
       {
         text: '삭제',
-        onPress: () => {
-          setComments(comments.filter(comment => comment.id !== commentId));
+        onPress: async () => {
+          try {
+            await axios.delete(`http://13.125.20.36:3000/api/answers/${commentId}`);
+            setComments(comments.filter((comment) => comment.id !== commentId));
+            Alert.alert('삭제 완료', '댓글이 삭제되었습니다.');
+          } catch (error) {
+            console.error('Error deleting comment:', error);
+            Alert.alert('오류', '댓글 삭제에 실패했습니다.');
+          }
         },
       },
     ]);
   };
 
   const toggleLike = (id) => {
-    const updatedComments = comments.map(comment =>
-      comment.id === id ? { ...comment, likes: comment.likes + (comment.hasLiked ? -1 : 1), hasLiked: !comment.hasLiked } : comment
+    const updatedComments = comments.map((comment) =>
+      comment.id === id
+        ? { ...comment, likes: comment.likes + (comment.hasLiked ? -1 : 1), hasLiked: !comment.hasLiked }
+        : comment
     );
     setComments(updatedComments);
   };
@@ -51,10 +81,11 @@ const CommentManagementScreen = () => {
     <View style={styles.commentContainer}>
       <View style={styles.commentHeader}>
         <Ionicons name="person-circle" size={18} color="#2c3e50" />
-        <Text style={styles.commentUsername}>{item.username}</Text>
-        <Text style={styles.commentTime}>{formatRelativeTime(item.time)}</Text>
+        <Text style={styles.commentUsername}>{item.answers_nickname}</Text>
+        <Text style={styles.commentTime}>{formatRelativeTime(item.created_at)}</Text>
       </View>
       <Text style={styles.commentContent}>{item.content}</Text>
+      <Text style={styles.commentQuestion}>질문: {item.question_title}</Text>
       <View style={styles.commentActions}>
         <TouchableOpacity onPress={() => toggleLike(item.id)} style={styles.iconWithText}>
           <FontAwesome name={item.hasLiked ? 'heart' : 'heart-o'} size={14} color="black" />
@@ -79,7 +110,7 @@ const CommentManagementScreen = () => {
         <FlatList
           data={comments}
           renderItem={renderItem}
-          keyExtractor={item => item.id}
+          keyExtractor={(item) => item.id.toString()}
           contentContainerStyle={styles.listContainer}
         />
       </View>
@@ -104,7 +135,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 16,
     top: 45,
-    zIndex : 1,
+    zIndex: 1,
   },
   headerTitle: {
     fontSize: 20,
@@ -141,6 +172,11 @@ const styles = StyleSheet.create({
   commentContent: {
     fontSize: 14,
     marginVertical: 4,
+  },
+  commentQuestion: {
+    fontSize: 12,
+    color: '#bdc3c7',
+    marginBottom: 4,
   },
   commentActions: {
     flexDirection: 'row',

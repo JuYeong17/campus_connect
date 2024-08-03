@@ -11,6 +11,7 @@ router.get('/', (req, res) => {
     res.json(results);
   });
 });
+
 router.get('/question/:questionId', (req, res) => {
   const { questionId } = req.params; // URL 파라미터에서 questionId를 가져옵니다.
 
@@ -21,6 +22,7 @@ router.get('/question/:questionId', (req, res) => {
     res.json(results);
   });
 });
+
 // 답변 추가
 router.post('/', (req, res) => {
   const answer = req.body;
@@ -72,31 +74,41 @@ router.delete('/:id', (req, res) => {
   });
 });
 
-// routes/answers.js
-router.post('/select/:id', (req, res) => {
+// 답변 채택
+router.post('/:id/select', (req, res) => {
   const { id } = req.params;
-  const { userId } = req.body; // ID of the user who is marking the answer
-
-  connection.query('UPDATE answers SET is_selected = 1 WHERE id = ?', [id], (error, results) => {
+  connection.query('UPDATE answers SET is_selected = TRUE, selected_at = NOW() WHERE id = ?', [id], (error, results) => {
     if (error) {
       return res.status(500).json({ error: error.message });
     }
-
-    // Update points for the user who answered
-    connection.query('SELECT user_id FROM answers WHERE id = ?', [id], (error, result) => {
+    if (results.affectedRows === 0) {
+      return res.status(404).json({ error: 'Answer not found' });
+    }
+    // 답변을 채택한 유저에게 포인트를 추가합니다.
+    connection.query('UPDATE users SET points = points + 10 WHERE id = (SELECT user_id FROM answers WHERE id = ?)', [id], (error, results) => {
       if (error) {
         return res.status(500).json({ error: error.message });
       }
-
-      const answerUserId = result[0].user_id;
-      connection.query('UPDATE users SET points = points + 10 WHERE id = ?', [answerUserId], (error) => {
-        if (error) {
-          return res.status(500).json({ error: error.message });
-        }
-        res.json({ success: true });
-      });
+      res.json({ success: true });
     });
   });
 });
-
+router.get('/user/:userId', (req, res) => {
+  const { userId } = req.params;
+  
+  const query = `
+    SELECT a.*, q.title AS question_title 
+    FROM answers a
+    JOIN questions q ON a.question_id = q.id
+    WHERE a.user_id = ?
+  `;
+  
+  connection.query(query, [userId], (error, results) => {
+    if (error) {
+      console.error('Error fetching user answers:', error);
+      return res.status(500).json({ error: error.message });
+    }
+    res.json(results);
+  });
+});
 module.exports = router;
