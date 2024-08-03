@@ -14,7 +14,7 @@ import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Menu, Provider, Dialog, Portal, RadioButton } from 'react-native-paper';
 import { Button as PaperButton } from 'react-native-paper';
-import { getStoredUserInfo, toggleLike, toggleScrap, getQuestionStatus } from '../api'; // API 함수 임포트
+import { getStoredUserInfo, toggleLike, toggleScrap, getQuestionStatus } from '../api';
 import axios from 'axios'; // axios 임포트
 import moment from 'moment';
 import 'moment/locale/ko';
@@ -138,10 +138,11 @@ const PostDetailScreen = () => {
       }
     } catch (error) {
       console.error('답변 선택 오류:', error);
-      Alert.alert('오류', '답변을 선택하는 동안 오류가 발생했습니다.');
+      Alert.alert('오류', '답변 선택 중 오류가 발생했습니다.');
     }
   };
 
+  // 좋아요 토글 핸들러
   const handleToggleLike = async () => {
     try {
       if (!userInfo) {
@@ -151,9 +152,9 @@ const PostDetailScreen = () => {
 
       const result = await toggleLike(post.id, userInfo.id, liked);
       if (result.success) {
+        setLikes((prevLikes) => prevLikes + (result.liked ? 1 : -1)); // 좋아요 수 업데이트
         setLiked(result.liked);
-        setLikes((prevLikes) => prevLikes + (result.liked ? 1 : -1));
-        setPost({ ...post, liked: result.liked, likes: likes + (result.liked ? 1 : -1) });
+        setPost({ ...post, likes: post.likes + (result.liked ? 1 : -1) });
       } else {
         Alert.alert('오류', result.message);
       }
@@ -163,6 +164,7 @@ const PostDetailScreen = () => {
     }
   };
 
+  // 스크랩 토글 핸들러
   const handleToggleScrap = async () => {
     try {
       if (!userInfo) {

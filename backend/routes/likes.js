@@ -55,5 +55,20 @@ router.post('/toggle', (req, res) => {
     }
   });
 });
+router.get('/count/:questionId', (req, res) => {
+  const { questionId } = req.params;
+
+  const countLikesQuery = `SELECT COUNT(*) AS likesCount FROM likes WHERE question_id = ?`;
+
+  connection.query(countLikesQuery, [questionId], (error, results) => {
+    if (error) {
+      console.error('좋아요 수 가져오기 오류:', error);
+      return res.status(500).json({ success: false, message: '좋아요 수 가져오기 오류' });
+    }
+
+    const likesCount = results[0].likesCount;
+    res.json({ success: true, likesCount });
+  });
+});
 
 module.exports = router;

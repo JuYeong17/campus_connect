@@ -212,5 +212,15 @@ export const addComment = async (answerId, content, userId) => {
     throw error;
   }
 };
-// api.js 파일에 toggleLike와 toggleScrap 함수 추가
-
+export const getLikesCount = async (questionId) => {
+  try {
+    const response = await api.get(`/likes/count/${questionId}`);
+    if (!response.data.success) {
+      throw new Error('좋아요 수 가져오기 실패');
+    }
+    return response.data.likesCount;
+  } catch (error) {
+    console.error('좋아요 수 가져오기 오류:', error);
+    throw error;
+  }
+};
