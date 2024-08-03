@@ -13,7 +13,7 @@ router.get('/', (req, res) => {
 });
 
 // 좋아요 추가 또는 삭제 (토글 기능)
-rrouter.post('/toggle', (req, res) => {
+router.post('/toggle', (req, res) => {
   const { question_id, user_id, liked } = req.body;
 
   // 중복 체크
