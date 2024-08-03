@@ -123,25 +123,58 @@ export const updateQuestion = async (id, question) => {
   }
 };
 
-export const toggleLike = async (id, liked) => {
+// api.js 파일에 toggleLike와 toggleScrap 함수 추가
+
+export const toggleLike = async (questionId, userId, liked) => {
   try {
-    const response = await api.post(`/questions/like/${id}`, { liked });
-    return response.data;
+    const response = await fetch('http://localhost:3000/api/likes/toggle', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        question_id: questionId,
+        user_id: userId,
+        liked,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('좋아요 토글 실패');
+    }
+
+    return response.json();
   } catch (error) {
-    console.error('Error toggling like:', error);
+    console.error('좋아요 API 호출 중 오류:', error);
     throw error;
   }
 };
 
-export const toggleScrap = async (id, scrapped) => {
+export const toggleScrap = async (questionId, userId, scrapped) => {
   try {
-    const response = await api.post(`/questions/scrap/${id}`, { scrapped });
-    return response.data;
+    const response = await fetch('http://localhost:3000/api/scraps/toggle', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        question_id: questionId,
+        user_id: userId,
+        scrapped,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('스크랩 토글 실패');
+    }
+
+    return response.json();
   } catch (error) {
-    console.error('Error toggling scrap:', error);
+    console.error('스크랩 API 호출 중 오류:', error);
     throw error;
   }
 };
+
 
 export const getQuestionsByCategory = async (category_id) => {
   try {
@@ -185,3 +218,5 @@ export const addComment = async (answerId, content, userId) => {
     throw error;
   }
 };
+// api.js 파일에 toggleLike와 toggleScrap 함수 추가
+

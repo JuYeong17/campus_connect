@@ -12,49 +12,35 @@ router.get('/', (req, res) => {
   });
 });
 
-// 좋아요 추가
-router.post('/', (req, res) => {
-  const like = req.body;
-  connection.query('INSERT INTO likes SET ?', like, (error, results) => {
-    if (error) {
-      return res.status(500).json({ error: error.message });
-    }
-    res.status(201).json(results);
-  });
-});
+// 좋아요 추가 또는 삭제 (토글 기능)
+router.post('/toggle', (req, res) => {
+  const { question_id, user_id, liked } = req.body;
 
-// 특정 좋아요 가져오기
-router.get('/:id', (req, res) => {
-  const { id } = req.params;
-  connection.query('SELECT * FROM likes WHERE id = ?', [id], (error, results) => {
-    if (error) {
-      return res.status(500).json({ error: error.message });
-    }
-    res.json(results[0]);
-  });
-});
-
-// 좋아요 업데이트
-router.put('/:id', (req, res) => {
-  const { id } = req.params;
-  const like = req.body;
-  connection.query('UPDATE likes SET ? WHERE id = ?', [like, id], (error, results) => {
-    if (error) {
-      return res.status(500).json({ error: error.message });
-    }
-    res.json(results);
-  });
-});
-
-// 좋아요 삭제
-router.delete('/:id', (req, res) => {
-  const { id } = req.params;
-  connection.query('DELETE FROM likes WHERE id = ?', [id], (error, results) => {
-    if (error) {
-      return res.status(500).json({ error: error.message });
-    }
-    res.json(results);
-  });
+  if (liked) {
+    // 좋아요 취소 (삭제)
+    connection.query(
+      'DELETE FROM likes WHERE question_id = ? AND user_id = ?',
+      [question_id, user_id],
+      (error, results) => {
+        if (error) {
+          return res.status(500).json({ error: error.message });
+        }
+        res.json({ message: '좋아요 취소', liked: false });
+      }
+    );
+  } else {
+    // 좋아요 추가
+    connection.query(
+      'INSERT INTO likes (question_id, user_id) VALUES (?, ?)',
+      [question_id, user_id],
+      (error, results) => {
+        if (error) {
+          return res.status(500).json({ error: error.message });
+        }
+        res.status(201).json({ message: '좋아요 추가', liked: true });
+      }
+    );
+  }
 });
 
 module.exports = router;
