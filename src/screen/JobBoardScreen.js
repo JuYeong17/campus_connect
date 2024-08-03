@@ -1,11 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  Image,
+} from 'react-native';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { Provider } from 'react-native-paper';
 import moment from 'moment';
 import 'moment/locale/ko';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
-import { getQuestionsByCategory, toggleLike, toggleScrap, getStoredUserInfo } from '../api';
+import {
+  getQuestionsByCategory,
+  toggleLike,
+  toggleScrap,
+  getStoredUserInfo,
+  getQuestionStatus,
+} from '../api';
 
 const JobBoardScreen = () => {
   const [questions, setQuestions] = useState([]);
@@ -18,78 +32,86 @@ const JobBoardScreen = () => {
 
   const fetchQuestions = async () => {
     try {
-      const response = await getQuestionsByCategory(1); // Fetch questions for category ID 1
-      console.log('Fetched questions:', response);
-
-      // Sort questions by id in descending order by default
+      const response = await getQuestionsByCategory(1);
       const sortedQuestions = response.sort((a, b) => b.id - a.id);
 
-      setQuestions(sortedQuestions);
-      setFilteredQuestions(sortedQuestions);
+      // 각 질문에 대한 상태를 가져와 설정합니다.
+      const questionsWithStatus = await Promise.all(
+        sortedQuestions.map(async (question) => {
+          const status = await getQuestionStatus(question.id, userInfo.id);
+          return {
+            ...question,
+            liked: status.liked,
+            scrapped: status.scrapped,
+          };
+        })
+      );
+
+      setQuestions(questionsWithStatus);
+      setFilteredQuestions(questionsWithStatus);
       console.log(selectedUniversity);
     } catch (error) {
-      console.error('Error fetching questions:', error);
+      console.error('질문 가져오기 오류:', error);
     }
   };
 
-  // Fetch data when the screen gains focus
   useFocusEffect(
     React.useCallback(() => {
       const fetchData = async () => {
         try {
           await fetchQuestions();
           const response = await getStoredUserInfo();
-          console.log('Fetched user info:', response); // Full response for debugging
-
-          // Check if response is not null and has a user property
           if (response && response.user) {
-            setUserInfo(response.user); // Extract user object
+            setUserInfo(response.user);
           } else {
-            setUserInfo(null); // Set userInfo to null if response is invalid
+            setUserInfo(null);
           }
         } catch (error) {
-          console.error('Error fetching user info:', error);
-          setUserInfo(null); // Ensure userInfo is set to null on error
+          console.error('사용자 정보 가져오기 오류:', error);
+          setUserInfo(null);
         }
       };
       fetchData();
-    }, []),
+    }, [userInfo])
   );
 
   useEffect(() => {
-    console.log('Updated userInfo:', userInfo);
-  }, [userInfo]);
-
-  useEffect(() => {
     if (searchQuery) {
-      setFilteredQuestions(questions.filter(question =>
-        question.title.includes(searchQuery) || question.content.includes(searchQuery)
-      ));
+      setFilteredQuestions(
+        questions.filter(
+          (question) =>
+            question.title.includes(searchQuery) || question.content.includes(searchQuery)
+        )
+      );
     } else {
       setFilteredQuestions(questions);
     }
   }, [searchQuery, questions]);
 
-  // 공감 토글 함수
   const handleToggleLike = async (id, liked) => {
     try {
       if (!userInfo) {
         Alert.alert('로그인 필요', '로그인 후 공감할 수 있습니다.');
         return;
       }
-      
+
       const result = await toggleLike(id, userInfo.id, liked);
-      const updatedQuestions = questions.map(question =>
-        question.id === id ? { ...question, likes: question.likes + (result.liked ? 1 : -1), liked: result.liked } : question
+      const updatedQuestions = questions.map((question) =>
+        question.id === id
+          ? {
+              ...question,
+              likes: question.likes + (result.liked ? 1 : -1),
+              liked: result.liked,
+            }
+          : question
       );
       setQuestions(updatedQuestions);
       setFilteredQuestions(updatedQuestions);
     } catch (error) {
-      console.error('좋아요 토글 중 오류:', error.message || error); // 오류 메시지 출력
+      console.error('좋아요 토글 중 오류:', error);
     }
   };
 
-  // 스크랩 토글 함수
   const handleToggleScrap = async (id, scrapped) => {
     try {
       if (!userInfo) {
@@ -98,20 +120,22 @@ const JobBoardScreen = () => {
       }
 
       const result = await toggleScrap(id, userInfo.id, scrapped);
-      const updatedQuestions = questions.map(question =>
-        question.id === id ? { ...question, scrapped: result.scrapped } : question
+      const updatedQuestions = questions.map((question) =>
+        question.id === id
+          ? { ...question, scrapped: result.scrapped }
+          : question
       );
       setQuestions(updatedQuestions);
       setFilteredQuestions(updatedQuestions);
     } catch (error) {
-      console.error('스크랩 토글 중 오류:', error.message || error); // 오류 메시지 출력
+      console.error('스크랩 토글 중 오류:', error);
     }
   };
 
   const handleAddPost = (newPost) => {
     if (!newPost.id) {
       console.error('새로운 포스트에 ID가 없습니다:', newPost);
-      return; // 새로운 포스트에 ID가 없으면 종료
+      return;
     }
     const updatedQuestions = [newPost, ...questions];
     setQuestions(updatedQuestions);
@@ -127,35 +151,25 @@ const JobBoardScreen = () => {
 
   const handleWritePost = () => {
     if (!userInfo) {
-      Alert.alert(
-        '로그인 필요',
-        '로그인해야 글을 작성할 수 있습니다.',
-        [
-          { text: '취소', style: 'cancel' },
-          { text: '로그인', onPress: () => navigation.navigate('Login') },
-        ],
-        { cancelable: false }
-      );
+      Alert.alert('로그인 필요', '로그인해야 글을 작성할 수 있습니다.', [
+        { text: '취소', style: 'cancel' },
+        { text: '로그인', onPress: () => navigation.navigate('Login') },
+      ]);
       return;
     }
 
     navigation.navigate('WritePostScreen', {
       category_id: 1,
-      onAddPost: handleAddPost, // 콜백 전달
+      onAddPost: handleAddPost,
     });
   };
 
   const handleNavigateToMyPage = () => {
     if (!userInfo) {
-      Alert.alert(
-        '로그인 필요',
-        '로그인해야 마이페이지를 볼 수 있습니다.',
-        [
-          { text: '취소', style: 'cancel' },
-          { text: '로그인', onPress: () => navigation.navigate('Login') },
-        ],
-        { cancelable: false }
-      );
+      Alert.alert('로그인 필요', '로그인해야 마이페이지를 볼 수 있습니다.', [
+        { text: '취소', style: 'cancel' },
+        { text: '로그인', onPress: () => navigation.navigate('Login') },
+      ]);
       return;
     }
 
@@ -165,9 +179,7 @@ const JobBoardScreen = () => {
   const renderItem = ({ item }) => (
     <TouchableOpacity
       style={styles.postContainer}
-      onPress={() =>
-        navigation.navigate('PostDetailScreen', { post: item, userInfo })
-      }
+      onPress={() => navigation.navigate('PostDetailScreen', { post: item, userInfo })}
     >
       <View style={styles.postContent}>
         <View style={styles.postTextContainer}>
@@ -193,11 +205,7 @@ const JobBoardScreen = () => {
           onPress={() => handleToggleLike(item.id, item.liked)}
           style={styles.iconWithText}
         >
-          <FontAwesome
-            name={item.liked ? 'heart' : 'heart-o'}
-            size={14}
-            color="black"
-          />
+          <FontAwesome name={item.liked ? 'heart' : 'heart-o'} size={14} color="black" />
           <Text style={styles.interactionText}>공감 {item.likes}</Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -219,10 +227,7 @@ const JobBoardScreen = () => {
     <Provider>
       <View style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backIcon}
-            onPress={() => navigation.goBack()}
-          >
+          <TouchableOpacity style={styles.backIcon} onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={30} color="white" />
           </TouchableOpacity>
           <View style={styles.headerTextContainer}>
@@ -248,17 +253,14 @@ const JobBoardScreen = () => {
           renderItem={renderItem}
           keyExtractor={(item) => {
             if (!item.id) {
-              console.error('Question item is missing an id:', item);
+              console.error('질문 항목에 ID가 없습니다:', item);
               return '';
             }
             return item.id.toString();
           }}
           contentContainerStyle={styles.listContainer}
         />
-        <TouchableOpacity
-          style={styles.writeButton}
-          onPress={handleWritePost}
-        >
+        <TouchableOpacity style={styles.writeButton} onPress={handleWritePost}>
           <Ionicons name="pencil" size={24} color="white" />
         </TouchableOpacity>
       </View>
@@ -329,7 +331,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   postTextContainer: {
-    flex: 1, // Ensure the text container uses remaining space
+    flex: 1,
   },
   title: {
     fontSize: 18,

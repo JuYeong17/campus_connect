@@ -181,7 +181,15 @@ export const deleteUser = async (id) => {
     throw error;
   }
 };
-
+export const getQuestionStatus = async (questionId, userId) => {
+  try {
+    const response = await api.get(`/questions/${questionId}/status/${userId}`);
+    return response.data;
+  } catch (error) {
+    console.error('좋아요 및 스크랩 상태 가져오기 오류:', error);
+    throw error;
+  }
+};
 export const updateUserPoints = async (userId, points) => {
   try {
     const response = await api.put(`/points/${userId}`, { points }); // Updated to match the new route

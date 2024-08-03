@@ -138,5 +138,40 @@ router.get('/user/posts/:user_id', (req, res) => {
     res.json(results);
   });
 });
+// routes/questions.js에 좋아요 및 스크랩 상태를 가져오는 API 추가
+
+router.get('/:id/status/:userId', (req, res) => {
+  const { id, userId } = req.params;
+
+  // 좋아요 상태 확인
+  connection.query(
+    'SELECT * FROM likes WHERE question_id = ? AND user_id = ?',
+    [id, userId],
+    (likeError, likeResults) => {
+      if (likeError) {
+        return res.status(500).json({ success: false, message: '좋아요 상태 확인 오류' });
+      }
+
+      // 스크랩 상태 확인
+      connection.query(
+        'SELECT * FROM scraps WHERE question_id = ? AND user_id = ?',
+        [id, userId],
+        (scrapError, scrapResults) => {
+          if (scrapError) {
+            return res.status(500).json({ success: false, message: '스크랩 상태 확인 오류' });
+          }
+
+          // 좋아요 및 스크랩 상태 반환
+          res.json({
+            success: true,
+            liked: likeResults.length > 0,
+            scrapped: scrapResults.length > 0,
+          });
+        }
+      );
+    }
+  );
+});
+
 
 module.exports = router;

@@ -1,11 +1,21 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, toString, Alert, Image, Keyboard } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  Image,
+  Keyboard,
+  TextInput,
+} from 'react-native';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Menu, Provider, Dialog, Portal, RadioButton } from 'react-native-paper';
 import { Button as PaperButton } from 'react-native-paper';
-import axios from 'axios';
-import { getStoredUserInfo } from '../api';
+import { getStoredUserInfo, toggleLike, toggleScrap, getQuestionStatus } from '../api'; // API 함수 임포트
+import axios from 'axios'; // axios 임포트
 import moment from 'moment';
 import 'moment/locale/ko';
 
@@ -16,13 +26,13 @@ const formatRelativeTime = (time) => {
 
 const PostDetailScreen = () => {
   const route = useRoute();
-  const { post: initialPost } = route.params; // post 데이터에서 질문 ID를 가져옵니다.
+  const { post: initialPost } = route.params;
   const [post, setPost] = useState(initialPost);
   const [likes, setLikes] = useState(post.likes);
-  const [liked, setLiked] = useState(false);
-  const [scrapped, setScrapped] = useState(post.scrapped);
+  const [liked, setLiked] = useState(false); // 초기 좋아요 상태 false로 설정
+  const [scrapped, setScrapped] = useState(false); // 초기 스크랩 상태 false로 설정
   const [menuVisible, setMenuVisible] = useState(false);
-  const [answers, setAnswers] = useState([]); // 답변 목록을 위한 상태
+  const [answers, setAnswers] = useState([]);
   const [commenting, setCommenting] = useState(null);
   const navigation = useNavigation();
   const [reportVisible, setReportVisible] = useState(false);
@@ -30,7 +40,7 @@ const PostDetailScreen = () => {
   const [editVisible, setEditVisible] = useState(false);
   const [deleteVisible, setDeleteVisible] = useState(false);
   const [userInfo, setUserInfo] = useState(null);
-  const [selectedAnswerId, setSelectedAnswerId] = useState(null); // To track the selected answer
+  const [selectedAnswerId, setSelectedAnswerId] = useState(null);
   const [answerMenuVisible, setAnswerMenuVisible] = useState(false);
   const [currentAnswer, setCurrentAnswer] = useState(null);
 
@@ -41,56 +51,56 @@ const PostDetailScreen = () => {
       try {
         const response = await getStoredUserInfo();
         if (response && response.user) {
-          setUserInfo(response.user); // Assuming response.user contains the user info
+          setUserInfo(response.user);
         } else {
-          console.warn('No user info found or response format is incorrect.');
+          console.warn('사용자 정보가 없거나 잘못된 형식입니다.');
         }
       } catch (err) {
-        console.error('Error fetching user info:', err);
+        console.error('사용자 정보 가져오기 오류:', err);
       }
     };
+
     fetchUserInfo();
-    console.log('detail: ', userInfo);
   }, []);
 
-  // useEffect(() => {
-  //   // Fetch answers for the specific post
-  //   const fetchAnswers = async () => {
-  //     try {
-  //       const response = await axios.get(`http://13.125.20.36:3000/api/answers/question/${post.id}`); // 특정 질문 ID에 맞는 답변을 가져옵니다.
-  //       if (response.data) {
-  //         setAnswers(response.data);
-  //       }
-  //     } catch (error) {
-  //       console.error('Error fetching answers:', error);
-  //     }
-  //   };
+  // 좋아요 및 스크랩 상태 가져오기
+  useEffect(() => {
+    const fetchStatus = async () => {
+      try {
+        if (!userInfo || !post.id) return; // 사용자 정보와 포스트 ID가 없는 경우 실행하지 않음
 
-  //   fetchAnswers();
-  // }, [post.id]);
+        const status = await getQuestionStatus(post.id, userInfo.id);
+        setLiked(status.liked);
+        setScrapped(status.scrapped);
+      } catch (error) {
+        console.error('좋아요 및 스크랩 상태 가져오기 오류:', error);
+      }
+    };
+
+    fetchStatus();
+  }, [userInfo, post.id]);
 
   useEffect(() => {
     if (!post.id) return;
-  
+
     const fetchPost = async () => {
       try {
         const response = await axios.get(`http://13.125.20.36:3000/api/questions/${post.id}`);
-        console.log('Post data:', response.data);
         setPost(response.data);
       } catch (error) {
         if (error.response) {
-          console.error('Response error:', error.response);
-          Alert.alert('Error', `Server responded with status code ${error.response.status}`);
+          console.error('응답 오류:', error.response);
+          Alert.alert('오류', `서버가 상태 코드 ${error.response.status}로 응답했습니다.`);
         } else if (error.request) {
-          console.error('Request error:', error.request);
-          Alert.alert('Error', 'No response received from server');
+          console.error('요청 오류:', error.request);
+          Alert.alert('오류', '서버로부터 응답이 없습니다.');
         } else {
-          console.error('Error message:', error.message);
-          Alert.alert('Error', 'An unexpected error occurred');
+          console.error('오류 메시지:', error.message);
+          Alert.alert('오류', '예기치 못한 오류가 발생했습니다.');
         }
       }
     };
-  
+
     fetchPost();
   }, [post.id]);
 
@@ -99,15 +109,14 @@ const PostDetailScreen = () => {
       try {
         const response = await axios.get(`http://13.125.20.36:3000/api/answers/question/${post.id}`);
         if (response.data) {
-          // Mark selected answer
-          const updatedAnswers = response.data.map(answer => ({
+          const updatedAnswers = response.data.map((answer) => ({
             ...answer,
             selected: answer.is_selected === 1,
           }));
           setAnswers(updatedAnswers);
         }
       } catch (error) {
-        console.error('Error fetching answers:', error);
+        console.error('답변 가져오기 오류:', error);
       }
     };
 
@@ -116,41 +125,68 @@ const PostDetailScreen = () => {
 
   const handleSelectAnswer = async (answerId) => {
     try {
-      // Mark the answer as selected
-      const response = await axios.post(`http://13.125.20.36:3000/api/answers/select/${answerId}`, { userId: userInfo.id });
+      const response = await axios.post(`http://13.125.20.36:3000/api/answers/select/${answerId}`, {
+        userId: userInfo.id,
+      });
       if (response.data.success) {
-        // Update the selected answer in the state
         setSelectedAnswerId(answerId);
-        // Notify the user that the answer was selected
         Alert.alert('답변 채택', '이 답변이 채택되어 답변글 작성자에게 포인트가 지급되었습니다.');
-        // Refresh the answers list to show the updated state
-        const updatedAnswers = answers.map(answer =>
+        const updatedAnswers = answers.map((answer) =>
           answer.id === answerId ? { ...answer, selected: true } : { ...answer, selected: false }
         );
         setAnswers(updatedAnswers);
       }
     } catch (error) {
-      console.error('Error selecting answer:', error);
-      Alert.alert('Error', 'An error occurred while selecting the answer.');
+      console.error('답변 선택 오류:', error);
+      Alert.alert('오류', '답변을 선택하는 동안 오류가 발생했습니다.');
     }
   };
 
-  const toggleLike = () => {
-    setLikes(likes + (liked ? -1 : 1));
-    setLiked(!liked);
+  const handleToggleLike = async () => {
+    try {
+      if (!userInfo) {
+        Alert.alert('로그인 필요', '로그인 후 공감할 수 있습니다.');
+        return;
+      }
+
+      const result = await toggleLike(post.id, userInfo.id, liked);
+      if (result.success) {
+        setLiked(result.liked);
+        setLikes((prevLikes) => prevLikes + (result.liked ? 1 : -1));
+        setPost({ ...post, liked: result.liked, likes: likes + (result.liked ? 1 : -1) });
+      } else {
+        Alert.alert('오류', result.message);
+      }
+    } catch (error) {
+      console.error('좋아요 토글 오류:', error.message || error);
+      Alert.alert('오류', error.message || '좋아요 토글 중 오류가 발생했습니다.');
+    }
   };
 
-  const toggleScrap = () => {
-    setScrapped(!scrapped);
+  const handleToggleScrap = async () => {
+    try {
+      if (!userInfo) {
+        Alert.alert('로그인 필요', '로그인 후 스크랩할 수 있습니다.');
+        return;
+      }
+
+      const result = await toggleScrap(post.id, userInfo.id, scrapped);
+      if (result.success) {
+        setScrapped(result.scrapped);
+        setPost({ ...post, scrapped: result.scrapped });
+      } else {
+        Alert.alert('오류', result.message);
+      }
+    } catch (error) {
+      console.error('스크랩 토글 오류:', error.message || error);
+      Alert.alert('오류', error.message || '스크랩 토글 중 오류가 발생했습니다.');
+    }
   };
 
   const addAnswer = (newAnswer) => {
-    setAnswers((prevAnswers) => [newAnswer, ...prevAnswers]); // Add the new answer to the list
+    setAnswers((prevAnswers) => [newAnswer, ...prevAnswers]);
   };
 
-
-  
-  
   const handleDeleteAnswer = (answerId) => {
     setAnswerMenuVisible(false);
     Alert.alert(
@@ -163,12 +199,11 @@ const PostDetailScreen = () => {
           onPress: async () => {
             try {
               await axios.delete(`http://13.125.20.36:3000/api/answers/${answerId}`);
-              // Remove the deleted answer from the state
-              setAnswers(prevAnswers => prevAnswers.filter(answer => answer.id !== answerId));
+              setAnswers((prevAnswers) => prevAnswers.filter((answer) => answer.id !== answerId));
               Alert.alert('삭제 완료', '답변이 삭제되었습니다.');
             } catch (error) {
-              console.error('Error deleting answer:', error);
-              Alert.alert('Error', '답변을 삭제하는 동안 오류가 발생했습니다.');
+              console.error('답변 삭제 오류:', error);
+              Alert.alert('오류', '답변을 삭제하는 동안 오류가 발생했습니다.');
             }
           },
         },
@@ -176,10 +211,9 @@ const PostDetailScreen = () => {
       { cancelable: false }
     );
   };
-  
+
   const handleReportAnswer = (answerId) => {
     setAnswerMenuVisible(false);
-    // Implement reporting functionality here
     Alert.alert('답변 신고', '신고 기능은 아직 구현되지 않았습니다.');
   };
 
@@ -187,7 +221,7 @@ const PostDetailScreen = () => {
     setCurrentAnswer(answerId);
     setAnswerMenuVisible(true);
   };
-  
+
   const handleMenuDismiss = () => {
     setAnswerMenuVisible(false);
     setCurrentAnswer(null);
@@ -212,7 +246,7 @@ const PostDetailScreen = () => {
                   ? {
                       ...comment,
                       likes: comment.hasLiked ? comment.likes - 1 : comment.likes + 1,
-                      hasLiked: !comment.hasLiked, // Toggle the like status
+                      hasLiked: !comment.hasLiked,
                     }
                   : comment
               ),
@@ -228,7 +262,7 @@ const PostDetailScreen = () => {
 
   const handleCommentClick = (answerId) => {
     setCommenting(answerId);
-    Keyboard.dismiss(); // Dismiss keyboard when starting to comment
+    Keyboard.dismiss();
   };
 
   const handleCloseCommentInput = () => {
@@ -246,13 +280,13 @@ const PostDetailScreen = () => {
   };
 
   const handleEditButtonClick = () => {
-    setMenuVisible(false); // Close the menu
+    setMenuVisible(false);
     handleEditConfirm();
     setEditVisible(true);
   };
 
   const handleDeleteButtonClick = () => {
-    setMenuVisible(false); // Close the menu
+    setMenuVisible(false);
     handleDeleteConfirm();
     setDeleteVisible(true);
   };
@@ -264,7 +298,7 @@ const PostDetailScreen = () => {
       [
         {
           text: '확인',
-          onPress: () => navigation.goBack(), // 나중에 신고 디비로 넘기기
+          onPress: () => navigation.goBack(),
         },
       ],
       { cancelable: false }
@@ -279,27 +313,27 @@ const PostDetailScreen = () => {
       isEditing: true,
       category_id: post.category_id,
       onAddPost: (updatedPost) => {
-        setPost(updatedPost); // Update local state with the updated post
+        setPost(updatedPost);
       },
     });
   };
 
   const handleEditAnswer = (answerId) => {
     setAnswerMenuVisible(false);
-    const answerToEdit = answers.find(answer => answer.id === answerId);
+    const answerToEdit = answers.find((answer) => answer.id === answerId);
     if (answerToEdit) {
       navigation.navigate('AnswerDetailScreen', {
         post,
         isEditing: true,
         answer: answerToEdit,
         onUpdateAnswer: (updatedAnswer) => {
-          setAnswers(prevAnswers => prevAnswers.map(answer =>
-            answer.id === answerId ? updatedAnswer : answer
-          ));
-        }
+          setAnswers((prevAnswers) =>
+            prevAnswers.map((answer) => (answer.id === answerId ? updatedAnswer : answer))
+          );
+        },
       });
     } else {
-      console.error('Answer not found');
+      console.error('답변을 찾을 수 없습니다.');
     }
   };
 
@@ -313,9 +347,8 @@ const PostDetailScreen = () => {
           text: '확인',
           onPress: async () => {
             try {
-              // Send DELETE request to the server
               const response = await axios.delete(`http://13.125.20.36:3000/api/questions/${post.id}`);
-              
+
               if (response.status === 200) {
                 Alert.alert('삭제 완료', '게시글이 성공적으로 삭제되었습니다.', [
                   {
@@ -327,8 +360,8 @@ const PostDetailScreen = () => {
                 Alert.alert('삭제 실패', response.data.message);
               }
             } catch (error) {
-              console.error('Error deleting post:', error);
-              Alert.alert('Error', '게시글을 삭제하는 동안 오류가 발생했습니다.');
+              console.error('게시글 삭제 오류:', error);
+              Alert.alert('오류', '게시글을 삭제하는 동안 오류가 발생했습니다.');
             }
           },
         },
@@ -366,9 +399,8 @@ const PostDetailScreen = () => {
     </View>
   );
 
-  const sortedAnswers = [...answers].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)); // Sort answers by creation time
+  const sortedAnswers = [...answers].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
 
-  // Check if the current user is the author of the post
   const isAuthor = userInfo && userInfo.id === post.user_id;
   const isAnswerAuthor = (answer) => userInfo && userInfo.id === answer.user_id;
 
@@ -406,15 +438,10 @@ const PostDetailScreen = () => {
           ListHeaderComponent={
             <View style={styles.postContainer}>
               <Text style={styles.title}>Q. {post.title}</Text>
-
               <Text style={styles.content}>{post.content}</Text>
               {post.image_url && (
-          <Image
-            source={{ uri: post.image_url }}
-            style={styles.postImage}
-            resizeMode="cover"
-          />
-        )}
+                <Image source={{ uri: post.image_url }} style={styles.postImage} resizeMode="cover" />
+              )}
               <View style={styles.postUserTime}>
                 <Ionicons name="person-circle" size={18} color="#2c3e50" />
                 <Text style={styles.username}>{post.username}</Text>
@@ -422,11 +449,11 @@ const PostDetailScreen = () => {
               </View>
               <View style={styles.separator} />
               <View style={styles.interactions}>
-                <TouchableOpacity onPress={toggleLike} style={styles.iconWithText}>
+                <TouchableOpacity onPress={handleToggleLike} style={styles.iconWithText}>
                   <FontAwesome name={liked ? 'heart' : 'heart-o'} size={14} color="black" />
                   <Text> 공감 {likes}</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={toggleScrap} style={styles.iconWithText}>
+                <TouchableOpacity onPress={handleToggleScrap} style={styles.iconWithText}>
                   <FontAwesome name={scrapped ? 'bookmark' : 'bookmark-o'} size={14} color="black" />
                   <Text> 스크랩</Text>
                 </TouchableOpacity>
@@ -443,15 +470,15 @@ const PostDetailScreen = () => {
                   <Text style={styles.answerTime}>{formatRelativeTime(item.created_at)}</Text>
                 </View>
                 <Menu
-                    visible={answerMenuVisible && currentAnswer === item.id}
-                    onDismiss={handleMenuDismiss}
-                    anchor={
-                      <TouchableOpacity onPress={() => handleMenuPress(item.id)} style={styles.moreButton}>
-                        <Ionicons name="ellipsis-vertical" size={20} color="black" />
-                      </TouchableOpacity>
-                    }
-                  >
-                    {isAnswerAuthor(item) ? (
+                  visible={answerMenuVisible && currentAnswer === item.id}
+                  onDismiss={handleMenuDismiss}
+                  anchor={
+                    <TouchableOpacity onPress={() => handleMenuPress(item.id)} style={styles.moreButton}>
+                      <Ionicons name="ellipsis-vertical" size={20} color="black" />
+                    </TouchableOpacity>
+                  }
+                >
+                  {isAnswerAuthor(item) ? (
                     <>
                       <Menu.Item onPress={() => handleEditAnswer(item.id)} title="수정하기" />
                       <Menu.Item onPress={() => handleDeleteAnswer(item.id)} title="삭제하기" />
@@ -460,15 +487,11 @@ const PostDetailScreen = () => {
                     <Menu.Item onPress={() => handleReportAnswer(item.id)} title="신고하기" />
                   )}
                 </Menu>
-
               </View>
               <Text style={styles.answerContent}>A. {item.content}</Text>
-              {item.image_url && <Image 
-              source={{ uri: item.image_url }} 
-              style={styles.answerMedia} 
-              resizeMode='cover'
-              />}
-                          
+              {item.image_url && (
+                <Image source={{ uri: item.image_url }} style={styles.answerMedia} resizeMode="cover" />
+              )}
               <View style={styles.answerFooter}>
                 <TouchableOpacity onPress={() => handleCommentClick(item.id)} style={styles.commentButton}>
                   <Ionicons name="chatbubble-outline" size={20} color="black" />
@@ -479,10 +502,7 @@ const PostDetailScreen = () => {
                     <Text>채택</Text>
                   </TouchableOpacity>
                 )}
-                {item.selected && (
-                  <Text style={styles.selectedText}>채택된 답변</Text>
-                )}
-                
+                {item.selected && <Text style={styles.selectedText}>채택된 답변</Text>}
               </View>
               {renderComments(item.comments, item.id)}
             </View>
@@ -530,13 +550,13 @@ const AddComment = ({ answerId, addComment, onClose }) => {
       content: comment,
       username: 'user2',
       likes: 0,
-      hasLiked: false, // Track if the comment is liked
+      hasLiked: false,
       time: new Date().toISOString(),
     };
 
     addComment(answerId, newComment);
     setComment('');
-    onClose(); // Close the input box after adding comment
+    onClose();
   };
 
   return (
@@ -667,9 +687,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 10,
   },
-  userTimeContainer:{
+  userTimeContainer: {
     flexDirection: 'row',
-
   },
   moreButton: {
     marginLeft: 10,
@@ -752,9 +771,9 @@ const styles = StyleSheet.create({
   radioContainer: {
     flexDirection: 'column',
   },
-  selectedText:{
+  selectedText: {
     color: '#ccc',
-  }
+  },
 });
 
 export default PostDetailScreen;
