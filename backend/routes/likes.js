@@ -1,24 +1,18 @@
+// routes/likes.js
+
 const express = require('express');
 const router = express.Router();
 const connection = require('../config/db');
 
-// 모든 좋아요 가져오기
-router.get('/', (req, res) => {
-  connection.query('SELECT * FROM likes', (error, results) => {
-    if (error) {
-      return res.status(500).json({ error: error.message });
-    }
-    res.json(results);
-  });
-});
-
-// 좋아요 추가 또는 삭제 (토글 기능)
+// 공감 토글
 router.post('/toggle', (req, res) => {
   const { question_id, user_id, liked } = req.body;
 
   const checkLikeQuery = `SELECT * FROM likes WHERE question_id = ? AND user_id = ?`;
   const insertLikeQuery = `INSERT INTO likes (question_id, user_id) VALUES (?, ?)`;
   const deleteLikeQuery = `DELETE FROM likes WHERE question_id = ? AND user_id = ?`;
+  const incrementLikeQuery = `UPDATE questions SET likes = likes + 1 WHERE id = ?`;
+  const decrementLikeQuery = `UPDATE questions SET likes = likes - 1 WHERE id = ?`;
 
   connection.query(checkLikeQuery, [question_id, user_id], (error, results) => {
     if (error) {
@@ -36,10 +30,18 @@ router.post('/toggle', (req, res) => {
             return res.status(500).json({ success: false, message: '좋아요 취소 오류' });
           }
 
-          return res.json({ success: true, liked: false });
+          // 좋아요 수 감소
+          connection.query(decrementLikeQuery, [question_id], (updateError) => {
+            if (updateError) {
+              console.error('좋아요 수 감소 오류:', updateError);
+              return res.status(500).json({ success: false, message: '좋아요 수 감소 오류' });
+            }
+
+            return res.json({ success: true, liked: false });
+          });
         });
       } else {
-        // 좋아요 이미 있는 상태로 오류 반환
+        // 이미 좋아요 상태로 오류 반환
         return res.json({ success: false, message: '이미 좋아요 상태입니다.' });
       }
     } else {
@@ -52,28 +54,21 @@ router.post('/toggle', (req, res) => {
             return res.status(500).json({ success: false, message: '좋아요 추가 오류' });
           }
 
-          return res.json({ success: true, liked: true });
+          // 좋아요 수 증가
+          connection.query(incrementLikeQuery, [question_id], (updateError) => {
+            if (updateError) {
+              console.error('좋아요 수 증가 오류:', updateError);
+              return res.status(500).json({ success: false, message: '좋아요 수 증가 오류' });
+            }
+
+            return res.json({ success: true, liked: true });
+          });
         });
       } else {
-        // 좋아요가 없는 상태로 오류 반환
+        // 이미 좋아요가 없는 상태로 오류 반환
         return res.json({ success: false, message: '좋아요가 없는 상태입니다.' });
       }
     }
-  });
-});
-router.get('/count/:questionId', (req, res) => {
-  const { questionId } = req.params;
-
-  const countLikesQuery = `SELECT COUNT(*) AS likesCount FROM likes WHERE question_id = ?`;
-
-  connection.query(countLikesQuery, [questionId], (error, results) => {
-    if (error) {
-      console.error('좋아요 수 가져오기 오류:', error);
-      return res.status(500).json({ success: false, message: '좋아요 수 가져오기 오류' });
-    }
-
-    const likesCount = results[0].likesCount;
-    res.json({ success: true, likesCount });
   });
 });
 
