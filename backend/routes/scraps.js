@@ -6,45 +6,50 @@ const connection = require('../config/db');
 router.post('/toggle', (req, res) => {
   const { question_id, user_id, scrapped } = req.body;
 
-  // 중복 체크
-  const checkQuery = 'SELECT * FROM scraps WHERE question_id = ? AND user_id = ?';
-  connection.query(checkQuery, [question_id, user_id], (error, results) => {
+  const checkScrapQuery = `SELECT * FROM scraps WHERE question_id = ? AND user_id = ?`;
+  const insertScrapQuery = `INSERT INTO scraps (question_id, user_id) VALUES (?, ?)`;
+  const deleteScrapQuery = `DELETE FROM scraps WHERE question_id = ? AND user_id = ?`;
+
+  connection.query(checkScrapQuery, [question_id, user_id], (error, results) => {
     if (error) {
-      return res.status(500).json({ error: error.message });
+      console.error('스크랩 확인 오류:', error);
+      return res.status(500).json({ success: false, message: '스크랩 확인 오류' });
     }
 
     if (results.length > 0) {
-      // 이미 스크랩이 존재하는 경우
+      // 이미 스크랩이 있는 경우
       if (scrapped) {
-        // 스크랩 취소 (삭제)
-        const deleteQuery = 'DELETE FROM scraps WHERE question_id = ? AND user_id = ?';
-        connection.query(deleteQuery, [question_id, user_id], (error, results) => {
-          if (error) {
-            return res.status(500).json({ error: error.message });
+        // 스크랩 취소
+        connection.query(deleteScrapQuery, [question_id, user_id], (deleteError) => {
+          if (deleteError) {
+            console.error('스크랩 취소 오류:', deleteError);
+            return res.status(500).json({ success: false, message: '스크랩 취소 오류' });
           }
-          res.json({ success: true, message: '스크랩 취소', scrapped: false });
+
+          return res.json({ success: true, scrapped: false });
         });
       } else {
-        // 이미 스크랩이 존재하는 상태에서 추가 요청을 받았을 때
-        res.json({ success: false, message: '이미 스크랩이 존재합니다.' });
+        // 스크랩 이미 있는 상태로 오류 반환
+        return res.json({ success: false, message: '이미 스크랩 상태입니다.' });
       }
     } else {
-      // 스크랩 추가
+      // 스크랩이 없는 경우
       if (!scrapped) {
-        const insertQuery = 'INSERT INTO scraps (question_id, user_id) VALUES (?, ?)';
-        connection.query(insertQuery, [question_id, user_id], (error, results) => {
-          if (error) {
-            return res.status(500).json({ error: error.message });
+        // 스크랩 추가
+        connection.query(insertScrapQuery, [question_id, user_id], (insertError) => {
+          if (insertError) {
+            console.error('스크랩 추가 오류:', insertError);
+            return res.status(500).json({ success: false, message: '스크랩 추가 오류' });
           }
-          res.status(201).json({ success: true, message: '스크랩 추가', scrapped: true });
+
+          return res.json({ success: true, scrapped: true });
         });
       } else {
-        // 이미 스크랩이 없는 상태에서 취소 요청을 받았을 때
-        res.json({ success: false, message: '스크랩이 존재하지 않습니다.' });
+        // 스크랩이 없는 상태로 오류 반환
+        return res.json({ success: false, message: '스크랩이 없는 상태입니다.' });
       }
     }
   });
 });
-
 
 module.exports = router;

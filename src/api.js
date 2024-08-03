@@ -2,13 +2,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://13.125.20.36:3000/api'
+  baseURL: 'http://13.125.20.36:3000/api', // 서버의 IP 주소로 변경
 });
 
 export const loginUser = async (user_id, password) => {
   try {
     const response = await api.post('/auth/login', { user_id, password });
-    // Check if response.data contains the expected user info
     if (response.data) {
       await AsyncStorage.setItem('userInfo', JSON.stringify(response.data));
       return response.data;
@@ -71,9 +70,6 @@ export const updateUserInfo = async (id, userInfo) => {
     if (userInfo.nickname) updatedFields.nickname = userInfo.nickname;
     if (userInfo.password) updatedFields.password = userInfo.password;
 
-    // Log the data being sent
-    console.log(`Sending update for user ID ${id}:`, updatedFields);
-
     const response = await api.put(`/users/${id}`, updatedFields);
     return response.data;
   } catch (error) {
@@ -104,7 +100,6 @@ export const getQuestionsByUsername = async (user_id) => {
 
 export const addQuestion = async (question) => {
   try {
-    console.log('!!!', question);
     const response = await api.post('/questions', question);
     return response.data;
   } catch (error) {
@@ -123,41 +118,53 @@ export const updateQuestion = async (id, question) => {
   }
 };
 
+// 좋아요 상태 가져오기
+export const getQuestionStatus = async (questionId, userId) => {
+  try {
+    const response = await api.get(`/questions/${questionId}/status/${userId}`);
+    return response.data;
+  } catch (error) {
+    console.error('질문 상태 가져오기 오류:', error);
+    throw error;
+  }
+};
+
+// 좋아요 토글
 export const toggleLike = async (questionId, userId, liked) => {
   try {
-    const response = await api.post('/likes/toggle', {
+    const response = await api.post(`/likes/toggle`, {
       question_id: questionId,
       user_id: userId,
       liked,
     });
 
     if (!response.data.success) {
-      throw new Error(response.data.message || '좋아요 토글 실패'); // 서버에서 보낸 오류 메시지를 사용
+      throw new Error(response.data.message || '좋아요 토글 실패');
     }
 
-    return response.data; // API 응답 데이터 반환
+    return response.data;
   } catch (error) {
-    console.error('좋아요 API 호출 중 오류:', error.message || error);
+    console.error('좋아요 API 호출 중 오류:', error);
     throw error;
   }
 };
 
-// 스크랩 토글 API (스크랩/스크랩 취소)
+// 스크랩 토글
 export const toggleScrap = async (questionId, userId, scrapped) => {
   try {
-    const response = await api.post('/scraps/toggle', {
+    const response = await api.post(`/scraps/toggle`, {
       question_id: questionId,
       user_id: userId,
       scrapped,
     });
 
     if (!response.data.success) {
-      throw new Error(response.data.message || '스크랩 토글 실패'); // 서버에서 보낸 오류 메시지를 사용
+      throw new Error(response.data.message || '스크랩 토글 실패');
     }
 
-    return response.data; // API 응답 데이터 반환
+    return response.data;
   } catch (error) {
-    console.error('스크랩 API 호출 중 오류:', error.message || error);
+    console.error('스크랩 API 호출 중 오류:', error);
     throw error;
   }
 };
@@ -181,46 +188,27 @@ export const deleteUser = async (id) => {
     throw error;
   }
 };
-export const getQuestionStatus = async (questionId, userId) => {
-  try {
-    const response = await api.get(`/questions/${questionId}/status/${userId}`);
-    return response.data;
-  } catch (error) {
-    console.error('좋아요 및 스크랩 상태 가져오기 오류:', error);
-    throw error;
-  }
-};
+
 export const updateUserPoints = async (userId, points) => {
   try {
-    const response = await api.put(`/points/${userId}`, { points }); // Updated to match the new route
+    const response = await api.put(`/points/${userId}`, { points });
     return response.data;
   } catch (error) {
     console.error('Error updating user points:', error);
     throw error;
   }
 };
+
 export const addComment = async (answerId, content, userId) => {
   try {
     const response = await api.post('/comments', {
       content,
       answer_id: answerId,
-      user_id: userId
+      user_id: userId,
     });
     return response.data;
   } catch (error) {
     console.error('Error adding comment:', error);
-    throw error;
-  }
-};
-export const getLikesCount = async (questionId) => {
-  try {
-    const response = await api.get(`/likes/count/${questionId}`);
-    if (!response.data.success) {
-      throw new Error('좋아요 수 가져오기 실패');
-    }
-    return response.data.likesCount;
-  } catch (error) {
-    console.error('좋아요 수 가져오기 오류:', error);
     throw error;
   }
 };

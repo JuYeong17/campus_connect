@@ -140,37 +140,34 @@ router.get('/user/posts/:user_id', (req, res) => {
 });
 // routes/questions.js에 좋아요 및 스크랩 상태를 가져오는 API 추가
 
-router.get('/:id/status/:userId', (req, res) => {
-  const { id, userId } = req.params;
+router.get('/:questionId/status/:userId', (req, res) => {
+  const { questionId, userId } = req.params;
 
-  // 좋아요 상태 확인
-  connection.query(
-    'SELECT * FROM likes WHERE question_id = ? AND user_id = ?',
-    [id, userId],
-    (likeError, likeResults) => {
-      if (likeError) {
-        return res.status(500).json({ success: false, message: '좋아요 상태 확인 오류' });
-      }
+  const likesQuery = `SELECT * FROM likes WHERE question_id = ? AND user_id = ?`;
+  const scrapsQuery = `SELECT * FROM scraps WHERE question_id = ? AND user_id = ?`;
 
-      // 스크랩 상태 확인
-      connection.query(
-        'SELECT * FROM scraps WHERE question_id = ? AND user_id = ?',
-        [id, userId],
-        (scrapError, scrapResults) => {
-          if (scrapError) {
-            return res.status(500).json({ success: false, message: '스크랩 상태 확인 오류' });
-          }
+  const getLikes = new Promise((resolve, reject) => {
+    connection.query(likesQuery, [questionId, userId], (error, likesResults) => {
+      if (error) reject(error);
+      resolve(likesResults.length > 0);
+    });
+  });
 
-          // 좋아요 및 스크랩 상태 반환
-          res.json({
-            success: true,
-            liked: likeResults.length > 0,
-            scrapped: scrapResults.length > 0,
-          });
-        }
-      );
-    }
-  );
+  const getScraps = new Promise((resolve, reject) => {
+    connection.query(scrapsQuery, [questionId, userId], (error, scrapsResults) => {
+      if (error) reject(error);
+      resolve(scrapsResults.length > 0);
+    });
+  });
+
+  Promise.all([getLikes, getScraps])
+    .then(([liked, scrapped]) => {
+      res.json({ success: true, liked, scrapped });
+    })
+    .catch((error) => {
+      console.error('좋아요 및 스크랩 상태 가져오기 오류:', error);
+      res.status(500).json({ success: false, message: '상태 가져오기 오류' });
+    });
 });
 
 

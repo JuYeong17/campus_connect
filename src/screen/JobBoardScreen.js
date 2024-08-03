@@ -1,5 +1,3 @@
-// JobBoardScreen.js
-
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -15,7 +13,13 @@ import { Provider } from 'react-native-paper';
 import moment from 'moment';
 import 'moment/locale/ko';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
-import { getQuestionsByCategory, toggleLike, toggleScrap, getStoredUserInfo, getLikesCount } from '../api'; // getLikesCount 추가
+import {
+  getQuestionsByCategory,
+  toggleLike,
+  toggleScrap,
+  getStoredUserInfo,
+  getQuestionStatus,
+} from '../api';
 
 const JobBoardScreen = () => {
   const [questions, setQuestions] = useState([]);
@@ -28,55 +32,54 @@ const JobBoardScreen = () => {
 
   const fetchQuestions = async () => {
     try {
-      const response = await getQuestionsByCategory(1); // 카테고리 ID 1에 대한 질문을 가져옵니다.
-      console.log('Fetched questions:', response);
+      if (!userInfo) {
+        // userInfo가 없는 경우 실행하지 않음
+        return;
+      }
 
-      // 질문을 기본적으로 ID 기준 내림차순으로 정렬합니다.
+      const response = await getQuestionsByCategory(1);
+
       const sortedQuestions = response.sort((a, b) => b.id - a.id);
 
-      // 각 질문의 좋아요 수를 가져옵니다.
-      const questionsWithLikes = await Promise.all(
+      // 각 질문에 대한 상태를 가져와 설정합니다.
+      const questionsWithStatus = await Promise.all(
         sortedQuestions.map(async (question) => {
-          const likesCount = await getLikesCount(question.id);
-          return { ...question, likes: likesCount };
+          const status = await getQuestionStatus(question.id, userInfo.id);
+          return {
+            ...question,
+            liked: status.liked,
+            scrapped: status.scrapped,
+          };
         })
       );
 
-      setQuestions(questionsWithLikes);
-      setFilteredQuestions(questionsWithLikes);
+      setQuestions(questionsWithStatus);
+      setFilteredQuestions(questionsWithStatus);
       console.log(selectedUniversity);
     } catch (error) {
       console.error('질문 가져오기 오류:', error);
     }
   };
 
-  // 화면이 포커스를 받을 때 데이터를 가져옵니다.
   useFocusEffect(
     React.useCallback(() => {
       const fetchData = async () => {
         try {
-          await fetchQuestions();
           const response = await getStoredUserInfo();
-          console.log('Fetched user info:', response);
-
-          // 응답이 null이 아니고 user 속성이 있는지 확인합니다.
           if (response && response.user) {
-            setUserInfo(response.user); // 사용자 객체 추출
+            setUserInfo(response.user);
           } else {
-            setUserInfo(null); // 응답이 유효하지 않을 경우 userInfo를 null로 설정합니다.
+            setUserInfo(null);
           }
+          await fetchQuestions(); // userInfo를 설정한 후 질문을 가져옵니다.
         } catch (error) {
           console.error('사용자 정보 가져오기 오류:', error);
-          setUserInfo(null); // 오류 발생 시 userInfo를 null로 설정합니다.
+          setUserInfo(null);
         }
       };
       fetchData();
-    }, [])
+    }, [userInfo]) // userInfo 변경 시에만 fetchQuestions가 실행되도록 함
   );
-
-  useEffect(() => {
-    console.log('Updated userInfo:', userInfo);
-  }, [userInfo]);
 
   useEffect(() => {
     if (searchQuery) {
@@ -93,36 +96,62 @@ const JobBoardScreen = () => {
 
   const handleToggleLike = async (id, liked) => {
     try {
-      await toggleLike(id, userInfo.id, liked);
-      const updatedQuestions = questions.map((question) =>
-        question.id === id
-          ? { ...question, likes: question.likes + (liked ? -1 : 1), liked: !question.liked }
-          : question
-      );
-      setQuestions(updatedQuestions);
-      setFilteredQuestions(updatedQuestions);
+      if (!userInfo) {
+        Alert.alert('로그인 필요', '로그인 후 공감할 수 있습니다.');
+        return;
+      }
+
+      const result = await toggleLike(id, userInfo.id, liked);
+      if (result.success) {
+        const updatedQuestions = questions.map((question) =>
+          question.id === id
+            ? {
+                ...question,
+                likes: question.likes + (result.liked ? 1 : -1),
+                liked: result.liked,
+              }
+            : question
+        );
+        setQuestions(updatedQuestions);
+        setFilteredQuestions(updatedQuestions);
+      } else {
+        Alert.alert('오류', result.message);
+      }
     } catch (error) {
       console.error('좋아요 토글 중 오류:', error);
+      Alert.alert('오류', error.message || '좋아요 토글 중 오류가 발생했습니다.');
     }
   };
 
   const handleToggleScrap = async (id, scrapped) => {
     try {
-      await toggleScrap(id, userInfo.id, scrapped);
-      const updatedQuestions = questions.map((question) =>
-        question.id === id ? { ...question, scrapped: !question.scrapped } : question
-      );
-      setQuestions(updatedQuestions);
-      setFilteredQuestions(updatedQuestions);
+      if (!userInfo) {
+        Alert.alert('로그인 필요', '로그인 후 스크랩할 수 있습니다.');
+        return;
+      }
+
+      const result = await toggleScrap(id, userInfo.id, scrapped);
+      if (result.success) {
+        const updatedQuestions = questions.map((question) =>
+          question.id === id
+            ? { ...question, scrapped: result.scrapped }
+            : question
+        );
+        setQuestions(updatedQuestions);
+        setFilteredQuestions(updatedQuestions);
+      } else {
+        Alert.alert('오류', result.message);
+      }
     } catch (error) {
       console.error('스크랩 토글 중 오류:', error);
+      Alert.alert('오류', error.message || '스크랩 토글 중 오류가 발생했습니다.');
     }
   };
 
   const handleAddPost = (newPost) => {
     if (!newPost.id) {
       console.error('새로운 포스트에 ID가 없습니다:', newPost);
-      return; // 새로운 포스트에 ID가 없으면 종료
+      return;
     }
     const updatedQuestions = [newPost, ...questions];
     setQuestions(updatedQuestions);
@@ -138,35 +167,25 @@ const JobBoardScreen = () => {
 
   const handleWritePost = () => {
     if (!userInfo) {
-      Alert.alert(
-        '로그인 필요',
-        '로그인해야 글을 작성할 수 있습니다.',
-        [
-          { text: '취소', style: 'cancel' },
-          { text: '로그인', onPress: () => navigation.navigate('Login') },
-        ],
-        { cancelable: false }
-      );
+      Alert.alert('로그인 필요', '로그인해야 글을 작성할 수 있습니다.', [
+        { text: '취소', style: 'cancel' },
+        { text: '로그인', onPress: () => navigation.navigate('Login') },
+      ]);
       return;
     }
 
     navigation.navigate('WritePostScreen', {
       category_id: 1,
-      onAddPost: handleAddPost, // 콜백 전달
+      onAddPost: handleAddPost,
     });
   };
 
   const handleNavigateToMyPage = () => {
     if (!userInfo) {
-      Alert.alert(
-        '로그인 필요',
-        '로그인해야 마이페이지를 볼 수 있습니다.',
-        [
-          { text: '취소', style: 'cancel' },
-          { text: '로그인', onPress: () => navigation.navigate('Login') },
-        ],
-        { cancelable: false }
-      );
+      Alert.alert('로그인 필요', '로그인해야 마이페이지를 볼 수 있습니다.', [
+        { text: '취소', style: 'cancel' },
+        { text: '로그인', onPress: () => navigation.navigate('Login') },
+      ]);
       return;
     }
 
@@ -176,9 +195,7 @@ const JobBoardScreen = () => {
   const renderItem = ({ item }) => (
     <TouchableOpacity
       style={styles.postContainer}
-      onPress={() =>
-        navigation.navigate('PostDetailScreen', { post: item, userInfo })
-      }
+      onPress={() => navigation.navigate('PostDetailScreen', { post: item, userInfo })}
     >
       <View style={styles.postContent}>
         <View style={styles.postTextContainer}>
@@ -252,7 +269,7 @@ const JobBoardScreen = () => {
           renderItem={renderItem}
           keyExtractor={(item) => {
             if (!item.id) {
-              console.error('Question item is missing an id:', item);
+              console.error('질문 항목에 ID가 없습니다:', item);
               return '';
             }
             return item.id.toString();
@@ -330,7 +347,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   postTextContainer: {
-    flex: 1, // Ensure the text container uses remaining space
+    flex: 1,
   },
   title: {
     fontSize: 18,
