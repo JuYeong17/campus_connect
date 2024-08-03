@@ -4,6 +4,25 @@ const express = require('express');
 const router = express.Router();
 const connection = require('../config/db');
 
+router.get('/user/:user_id', (req, res) => {
+  const { user_id } = req.params;
+
+  const query = `
+    SELECT q.*, l.created_at as liked_at
+    FROM likes l
+    JOIN questions q ON l.question_id = q.id
+    WHERE l.user_id = ?
+  `;
+
+  connection.query(query, [user_id], (error, results) => {
+    if (error) {
+      console.error('Error fetching liked items:', error);
+      return res.status(500).json({ error: error.message });
+    }
+    res.json(results);
+  });
+});
+
 // 공감 토글
 router.post('/toggle', (req, res) => {
   const { question_id, user_id, liked } = req.body;

@@ -9,36 +9,45 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
-import { getStoredUserInfo } from '../api';
+import { getStoredUserInfo } from '../api'; // Import function to get stored user info
 
 const PostManagementScreen = () => {
   const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true); // Add a loading state for better UX
   const navigation = useNavigation();
-  const route = useRoute();
-
-  const { user_id } = route.params; // Get user_id from route params
 
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const response = await axios.get(
-          'http://13.125.20.36:3000/api/questions',
-          {
-            params: {
-              user_id: user_id, // Pass user_id as a query parameter
-            },
-          }
-        );
-        setPosts(response.data);
+        // Get stored user info
+        const storedUserInfo = await getStoredUserInfo();
+
+        if (storedUserInfo && storedUserInfo.user) {
+          const userId = storedUserInfo.user.id; // Fetch user_id from user info
+
+          console.log('Fetching posts for user_id:', userId); // Log for debugging
+
+          // Fetch posts for this user
+          const response = await axios.get(
+            `http://13.125.20.36:3000/api/questions/user/${userId}`
+          );
+
+          setPosts(response.data);
+        } else {
+          Alert.alert('오류', '로그인 정보가 없습니다.');
+        }
       } catch (error) {
         console.error('Error fetching posts:', error);
+        Alert.alert('오류', '게시글을 가져오는 중 오류가 발생했습니다.');
+      } finally {
+        setLoading(false); // Set loading to false after data is fetched
       }
     };
 
     fetchPosts();
-  }, [user_id]);
+  }, []);
 
   const handleDeletePost = (postId) => {
     Alert.alert(
@@ -53,12 +62,11 @@ const PostManagementScreen = () => {
           text: '삭제',
           onPress: async () => {
             try {
-              // 백틱(`) 사용하여 템플릿 리터럴로 URL 생성
               await axios.delete(
                 `http://13.125.20.36:3000/api/questions/${postId}`
               );
 
-              // 게시글 삭제 후 상태 업데이트
+              // Remove post from state after deletion
               const updatedPosts = posts.filter((post) => post.id !== postId);
               setPosts(updatedPosts);
 
@@ -104,12 +112,16 @@ const PostManagementScreen = () => {
           <Text style={styles.headerTitle}>게시글 관리</Text>
         </View>
       </View>
-      <FlatList
-        data={posts}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={styles.listContainer}
-      />
+      {loading ? ( // Show loading indicator while data is being fetched
+        <ActivityIndicator size="large" color="#2c3e50" />
+      ) : (
+        <FlatList
+          data={posts}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.listContainer}
+        />
+      )}
       <TouchableOpacity
         style={styles.addButton}
         onPress={() => navigation.navigate('WritePostScreen')}

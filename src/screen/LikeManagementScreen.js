@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { Ionicons, FontAwesome } from '@expo/vector-icons';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Provider } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
+import axios from 'axios';
+import { getStoredUserInfo } from '../api'; // Import getStoredUserInfo to fetch user info
 import moment from 'moment';
 
 const formatRelativeTime = (time) => {
@@ -12,16 +14,35 @@ const formatRelativeTime = (time) => {
 
 const LikeManagementScreen = () => {
   const [likedItems, setLikedItems] = useState([]);
+  const [loading, setLoading] = useState(true); // Add loading state for UX
   const navigation = useNavigation();
 
   useEffect(() => {
-    // Fetch liked items from an API or database
     const fetchLikedItems = async () => {
-      // Mock data for demonstration
-      const data = [
-        { id: '1', title: '취업 준비 다들 어떻게 하셨나요???', content: '막막합니다ㅜㅜ', time: '2024-07-22T10:00:00Z', likes: 5, type: 'post' },
-      ];
-      setLikedItems(data);
+      try {
+        // Fetch stored user info
+        const storedUserInfo = await getStoredUserInfo();
+
+        if (storedUserInfo && storedUserInfo.user) {
+          const userId = storedUserInfo.user.id; // Fetch user_id from user info
+
+          console.log('Fetching liked items for user_id:', userId); // Debug log
+
+          // Fetch liked items for this user
+          const response = await axios.get(
+            `http://13.125.20.36:3000/api/likes/user/${userId}`
+          );
+
+          setLikedItems(response.data);
+        } else {
+          Alert.alert('오류', '로그인 정보가 없습니다.');
+        }
+      } catch (error) {
+        console.error('Error fetching liked items:', error);
+        Alert.alert('오류', '좋아요 항목을 가져오는 중 오류가 발생했습니다.');
+      } finally {
+        setLoading(false); // Set loading to false after data is fetched
+      }
     };
 
     fetchLikedItems();
@@ -35,8 +56,20 @@ const LikeManagementScreen = () => {
       },
       {
         text: '확인',
-        onPress: () => {
-          setLikedItems(likedItems.filter(item => item.id !== itemId));
+        onPress: async () => {
+          try {
+            await axios.post('http://13.125.20.36:3000/api/likes/toggle', {
+              question_id: itemId,
+              user_id: userInfo.id,
+              liked: true,
+            });
+
+            setLikedItems(likedItems.filter((item) => item.id !== itemId));
+            Alert.alert('좋아요 취소됨', '좋아요가 취소되었습니다.');
+          } catch (error) {
+            console.error('Error unliking item:', error);
+            Alert.alert('오류', '좋아요 취소 중 오류가 발생했습니다.');
+          }
         },
       },
     ]);
@@ -46,12 +79,15 @@ const LikeManagementScreen = () => {
     <View style={styles.itemContainer}>
       <View style={styles.itemHeader}>
         <Text style={styles.itemTitle}>{item.title}</Text>
-        <TouchableOpacity onPress={() => handleUnlikeItem(item.id)} style={styles.unlikeButton}>
+        <TouchableOpacity
+          onPress={() => handleUnlikeItem(item.id)}
+          style={styles.unlikeButton}
+        >
           <Ionicons name="heart-dislike" size={20} color="red" />
         </TouchableOpacity>
       </View>
       <Text style={styles.itemContent}>{item.content}</Text>
-      <Text style={styles.itemTime}>{formatRelativeTime(item.time)}</Text>
+      <Text style={styles.itemTime}>{formatRelativeTime(item.liked_at)}</Text>
       <Text style={styles.itemLikes}>Likes: {item.likes}</Text>
     </View>
   );
@@ -60,17 +96,24 @@ const LikeManagementScreen = () => {
     <Provider>
       <View style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backIcon} onPress={() => navigation.goBack()}>
+          <TouchableOpacity
+            style={styles.backIcon}
+            onPress={() => navigation.goBack()}
+          >
             <Ionicons name="arrow-back" size={30} color="white" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>좋아요 관리</Text>
         </View>
-        <FlatList
-          data={likedItems}
-          renderItem={renderItem}
-          keyExtractor={item => item.id}
-          contentContainerStyle={styles.listContainer}
-        />
+        {loading ? ( // Show loading indicator while fetching data
+          <ActivityIndicator size="large" color="#2c3e50" />
+        ) : (
+          <FlatList
+            data={likedItems}
+            renderItem={renderItem}
+            keyExtractor={(item) => item.id.toString()}
+            contentContainerStyle={styles.listContainer}
+          />
+        )}
       </View>
     </Provider>
   );
@@ -93,7 +136,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 16,
     top: 45,
-    zIndex : 1,
+    zIndex: 1,
   },
   headerTitle: {
     fontSize: 20,

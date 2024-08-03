@@ -77,7 +77,6 @@ const WritePostScreen = ({ route }) => {
       username: anonymous ? '익명' : userInfo.nickname,
       likes: 0,
       scrapped: false,
-      liked: false,
       created_at: moment().utc().format(),
       image_url: image, // Add the image URL to the post data
     };
