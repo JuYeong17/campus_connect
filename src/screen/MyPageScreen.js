@@ -112,7 +112,7 @@ const MyPageScreen = () => {
             navigation.navigate("CommentManagementScreen", {userInfo});
           }}
         >
-          <Text style={styles.optionText}>댓글 관리</Text>
+          <Text style={styles.optionText}>답변 관리</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.optionButton}
@@ -136,7 +136,7 @@ const MyPageScreen = () => {
         <TouchableOpacity
           style={styles.optionButton}
           onPress={() => {
-            navigation.navigate("PointShopScreen", {userInfo});
+            navigation.navigate("PointShopScreen");
           }}
         >
           <Text style={styles.optionText}>포인트샵</Text>

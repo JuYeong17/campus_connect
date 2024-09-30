@@ -114,7 +114,7 @@ const WritePostScreen = ({ route }) => {
             </TouchableOpacity>
             <View style={styles.headerTextContainer}>
               <Text style={styles.headerTitle}>
-                {isEditing ? '답변 수정' : '질문 작성'}
+                {isEditing ? '질문 수정' : '질문 작성'}
               </Text>
             </View>
           </View>

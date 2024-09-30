@@ -105,7 +105,7 @@ const CommentManagementScreen = () => {
           <TouchableOpacity style={styles.backIcon} onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={30} color="white" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>댓글 관리</Text>
+          <Text style={styles.headerTitle}>답변 관리</Text>
         </View>
         <FlatList
           data={comments}
